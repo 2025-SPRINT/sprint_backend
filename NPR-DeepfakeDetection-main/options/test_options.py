@@ -1,17 +1,15 @@
-from .base_options import BaseOptions
+# options/test_options.py
 
+# ... 기존 import / class TestOptions(BaseOptions) ... 내부에서
+def initialize(self, parser):
+    parser = BaseOptions.initialize(self, parser)
 
-class TestOptions(BaseOptions):
-    def initialize(self, parser):
-        parser = BaseOptions.initialize(self, parser)
-        # parser.add_argument('--dataroot')
-        parser.add_argument('--model_path')
-        parser.add_argument('--no_resize', action='store_true')
-        parser.add_argument('--no_crop', action='store_true')
-        parser.add_argument('--eval', action='store_true', help='use eval mode during test time.')
-        parser.add_argument('--earlystop_epoch', type=int, default=15)
-        parser.add_argument('--lr', type=float, default=0.00002, help='initial learning rate for adam')
-        parser.add_argument('--niter', type=int, default=0, help='# of iter at starting learning rate')
+    # ✅ (추가) JSON 출력 옵션
+    parser.add_argument('--output_json', type=str, default=None,
+                        help='Save summary(metrics+config+run) as JSON to this path')
+    parser.add_argument('--output_jsonl', type=str, default=None,
+                        help='Save per-sample predictions as JSONL to this path (one record per line)')
+    parser.add_argument('--save_predictions', action='store_true',
+                        help='If set, include per-sample predictions in output_json (can be huge)')
 
-        self.isTrain = False
-        return parser
+    return parser
