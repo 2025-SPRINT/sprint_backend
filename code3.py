@@ -1,6 +1,6 @@
 # youtube-transcript-api 패키지 설치
 # 주의: 설치 후 커널을 재시작해야 할 수 있습니다 (Kernel -> Restart Kernel)
-!pip install youtube-transcript-api
+# !pip install youtube-transcript-api
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
