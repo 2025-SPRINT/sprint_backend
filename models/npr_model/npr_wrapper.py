@@ -17,13 +17,29 @@ class NPRDetector:
         # 3. 모델 구조 로드 (ResNet50)
         self.model = resnet50(num_classes=1)
         
-        # 4. 가중치 로드
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {model_path}")
+        if os.path.exists(model_path):
+            # 2. 체크포인트 로드 (상자 통째로 가져오기)
+            checkpoint = torch.load(model_path, map_location=self.device)
             
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-        self.model.to(self.device)
-        self.model.eval()
+            # 3. 'model' 키가 있다면 알맹이만 추출
+            if isinstance(checkpoint, dict) and 'model' in checkpoint:
+                state_dict = checkpoint['model']
+            else:
+                state_dict = checkpoint
+            
+            # 4. 'module.' 접두사 제거 (가장 중요!)
+            new_state_dict = {}
+            for k, v in state_dict.items():
+                name = k[7:] if k.startswith('module.') else k
+                new_state_dict[name] = v
+            
+            # 5. 모델에 가중치 주입
+            self.model.load_state_dict(new_state_dict)
+            print(f"{model_filename} 로드 완료 (장치: {self.device})")
+        else:
+            print(f"모델 파일을 찾을 수 없습니다: {model_path}")
+
+        self.model.to(self.device).eval()
 
         # 5. 전처리 설정 (NPR 표준 규격)
         self.transform = transforms.Compose([
