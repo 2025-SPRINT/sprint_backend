@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+GANGen-Detection-20251229T183332Z-3-001/
+NPR-DeepfakeDetection-main/
