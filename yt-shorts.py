@@ -101,7 +101,7 @@ def collect_and_split_data(api_key, url, video_id):
 
     return target_dir
 
-def main():
+def extract_shorts():
     api_key = get_or_save_api_key()
     url = input("유튜브/쇼츠 링크를 입력하세요: ").strip()
     v_id = get_video_id(url)
@@ -122,4 +122,4 @@ def main():
         print("❌ 올바른 유튜브 URL 형식이 아닙니다.")
 
 if __name__ == "__main__":
-    main()
+    extract_shorts()
