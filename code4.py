@@ -1,9 +1,13 @@
 # youtube-transcript-api 패키지 설치
 # 주의: 설치 후 커널을 재시작해야 할 수 있습니다 (Kernel -> Restart Kernel)
-# pip install youtube-transcript-api
+# pip install youtube-transcript-api 를 터미널에 입력하세요.
 
 import json
 from youtube_transcript_api import YouTubeTranscriptApi
+from flask import Flask, jsonify
+from flask import request
+
+app = Flask(__name__)
 
 def get_youtube_transcript(video_url, languages=None, save_to_json=None):
     """
@@ -42,14 +46,31 @@ def get_youtube_transcript(video_url, languages=None, save_to_json=None):
 
     except Exception as e:
         return f"Error: {e}"
+## 서버 상태 확인용
+@app.route('/')
+def home():
+    return jsonify({
+        "status": "success",
+        "message": "Hello, World! Flask server is running."
+    })
+## YouTube 자막 추출 API 수행
+@app.route('/transcript', methods=['POST'])
+def get_transcript():
+    data = request.json
+    video_url = data.get('video_url')
+    languages = data.get('languages')
+    
+    if not video_url:
+        return jsonify({"status": "error", "message": "video_url is required"}), 400
+    
+    try:
+        transcript = get_youtube_transcript(video_url, languages=languages)
+        if isinstance(transcript, str) and transcript.startswith("Error:"):
+            return jsonify({"status": "error", "message": transcript}), 500
+        return jsonify({"status": "success", "transcript": transcript})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # 사용 예시
 if __name__ == "__main__":
-    # 예시 유튜브 URL
-    url = "https://www.youtube.com/watch?v=hN8KFzUuhgk"
-    
-    # 기본 언어로 자막 추출 및 JSON 저장
-    transcript = get_youtube_transcript(url, save_to_json='transcript.json')
-    
-    # 특정 언어로 자막 추출 및 JSON 저장 (한국어 우선, 없으면 영어)
-    transcript_ko = get_youtube_transcript(url, languages=['ko', 'en'], save_to_json='transcript_ko.json')
+    app.run(debug=True)
