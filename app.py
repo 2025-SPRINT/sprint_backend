@@ -1,7 +1,5 @@
 from flask import Flask, jsonify
 
-from gemini_main import
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -12,12 +10,22 @@ def home():
     })
 
 ############# 순호 추가 #############
+from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
+from flask import request
 
+<<<<<<< HEAD
 from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
 from flask import request
 
 @app.route('/extract', methods=['POST'])
 def extract_video_data():
+=======
+@app.route('/extract', methods=['POST'])
+def extract_video_data():
+    """
+   
+    """
+>>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
     data = request.json
     url = data.get('url')
     api_key = get_or_save_api_key()
@@ -27,6 +35,10 @@ def extract_video_data():
         return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
 
     try:
+<<<<<<< HEAD
+=======
+       
+>>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
         result_path = collect_and_split_data(api_key, url, v_id)
         
         return jsonify({
@@ -37,7 +49,10 @@ def extract_video_data():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+<<<<<<< HEAD
 
+=======
+>>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
 
 
 ############# 현석 추가 #############
@@ -134,12 +149,98 @@ def analyze_npr():
 
 
 ############# 승언 추가 #############
+# youtube-transcript-api 패키지 설치
+# 주의: 설치 후 커널을 재시작해야 할 수 있습니다 (Kernel -> Restart Kernel)
+# pip install youtube-transcript-api 를 터미널에 입력하세요.
 
+import json
+from youtube_transcript_api import YouTubeTranscriptApi
+from flask import Flask, jsonify
+from flask import request
+
+# app = Flask(__name__)
+
+@app.route('/transcript', methods=['POST'])
+def get_youtube_transcript():
+    """
+    유튜브 영상의 자막을 추출하는 함수
+    
+    Parameters:
+    - video_url: 유튜브 영상 URL (예: https://www.youtube.com/watch?v=abcd1234)
+    - languages: 원하는 언어 코드 리스트 (예: ['ko', 'en']). None이면 기본 언어 사용
+    - save_to_json: JSON 파일로 저장할 경로 (예: 'transcript.json'). None이면 저장하지 않음
+    
+    Returns:
+    - 자막 데이터 리스트 (각 항목: {'text': str, 'start': float, 'duration': float})
+    """
+    data = request.json
+    video_url = data.get('video_url')
+    languages = data.get('languages')
+    save_to_json = data.get('save_to_json')
+    
+    if not video_url:
+        return jsonify({"status": "error", "message": "video_url is required"}), 400
+    
+    # YouTube URL에서 video_id 분리
+    # 예: https://www.youtube.com/watch?v=abcd1234 -> abcd1234
+    video_id = video_url.split("v=")[-1].split("&")[0]
+
+    try:
+        # YouTubeTranscriptApi 인스턴스 생성
+        ytt_api = YouTubeTranscriptApi()
+        
+        # 자막 가져오기
+        if languages:
+            transcript = ytt_api.fetch(video_id, languages=languages)
+        else:
+            # 언어 지정 없이 자동으로 사용 가능한 자막 선택
+            transcript = ytt_api.fetch(video_id)
+        
+        # JSON 파일로 저장 (옵션)
+        if save_to_json:
+            with open(save_to_json, 'w', encoding='utf-8') as f:
+                json.dump(transcript, f, ensure_ascii=False, indent=4)
+            print(f"Transcript saved to {save_to_json}")
+        
+        return jsonify({"status": "success", "transcript": transcript})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# 사용 예시
+# if __name__ == "__main__":
+#     app.run(debug=True)
 
 
 ############# 도현 추가 #############
 
+from gemini_main import main as gemini_analyze, PROMPT_1
+import asyncio, os
 
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    data = request.get_json()
+    if not data or 'script' not in data:
+        return jsonify({
+            "status": "error",
+            "message": "Missing 'script' in request body"
+        }), 400
+    
+    script = data.get('script')
+    prompt = data.get('prompt', PROMPT_1)
+    
+    try:
+        # gemini_analyze is an async function, so we run it using asyncio
+        report = asyncio.run(gemini_analyze(prompt, script))
+        return jsonify({
+            "status": "success",
+            "report": report
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 ###################################
 
