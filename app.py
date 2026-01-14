@@ -16,8 +16,7 @@ from flask import request
 @app.route('/extract', methods=['POST'])
 def extract_video_data():
     """
-    사용자로부터 유튜브 URL을 받아 데이터를 추출하고 
-    저장된 폴더 정보를 반환하는 엔드포인트입니다.
+   
     """
     data = request.json
     url = data.get('url')
@@ -28,7 +27,7 @@ def extract_video_data():
         return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
 
     try:
-        # 순호님이 작성한 추출 로직 실행
+       
         result_path = collect_and_split_data(api_key, url, v_id)
         
         return jsonify({
