@@ -1,0 +1,103 @@
+{
+    "video_info": {
+        "kind": "youtube#videoListResponse",
+        "etag": "O2Mq7AyBUf7_loR5YAayOgz4CGw",
+        "items": [
+            {
+                "kind": "youtube#video",
+                "etag": "3Tjo1MJ1x0hcc7OhdJ2BLIIS1TU",
+                "id": "7ZUTtniEryg",
+                "snippet": {
+                    "publishedAt": "2025-12-30T10:01:02Z",
+                    "channelId": "UCwTH2UCgVbvZ2ottfBEOkSw",
+                    "title": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)",
+                    "description": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)",
+                    "thumbnails": {
+                        "default": {
+                            "url": "https://i.ytimg.com/vi/7ZUTtniEryg/default.jpg",
+                            "width": 120,
+                            "height": 90
+                        },
+                        "medium": {
+                            "url": "https://i.ytimg.com/vi/7ZUTtniEryg/mqdefault.jpg",
+                            "width": 320,
+                            "height": 180
+                        },
+                        "high": {
+                            "url": "https://i.ytimg.com/vi/7ZUTtniEryg/hqdefault.jpg",
+                            "width": 480,
+                            "height": 360
+                        },
+                        "standard": {
+                            "url": "https://i.ytimg.com/vi/7ZUTtniEryg/sddefault.jpg",
+                            "width": 640,
+                            "height": 480
+                        },
+                        "maxres": {
+                            "url": "https://i.ytimg.com/vi/7ZUTtniEryg/maxresdefault.jpg",
+                            "width": 1280,
+                            "height": 720
+                        }
+                    },
+                    "channelTitle": "Video ad upload channel for 924-637-3026",
+                    "categoryId": "22",
+                    "liveBroadcastContent": "none",
+                    "defaultLanguage": "ko",
+                    "localized": {
+                        "title": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)",
+                        "description": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)"
+                    }
+                },
+                "contentDetails": {
+                    "duration": "PT31S",
+                    "dimension": "2d",
+                    "definition": "hd",
+                    "caption": "false",
+                    "licensedContent": false,
+                    "contentRating": {},
+                    "projection": "rectangular"
+                },
+                "status": {
+                    "uploadStatus": "processed",
+                    "privacyStatus": "unlisted",
+                    "license": "youtube",
+                    "embeddable": true,
+                    "publicStatsViewable": true,
+                    "madeForKids": false
+                },
+                "statistics": {
+                    "viewCount": "73",
+                    "likeCount": "73",
+                    "favoriteCount": "0",
+                    "commentCount": "0"
+                },
+                "player": {
+                    "embedHtml": "<iframe width=\"480\" height=\"270\" src=\"//www.youtube.com/embed/7ZUTtniEryg\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>"
+                },
+                "recordingDetails": {},
+                "localizations": {
+                    "ko": {
+                        "title": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)",
+                        "description": "Blurry: [아큐브 with 코르티스] 내가 보는 세상은 본다는 것 그 이상! (30s)"
+                    }
+                }
+            }
+        ],
+        "pageInfo": {
+            "totalResults": 1,
+            "resultsPerPage": 1
+        }
+    },
+    "comments": {
+        "kind": "youtube#commentThreadListResponse",
+        "etag": "MStfyAVknbmm8Y8IMLK7efWiS98",
+        "pageInfo": {
+            "totalResults": 0,
+            "resultsPerPage": 100
+        },
+        "items": []
+    },
+    "captions": {
+        "error": "자막 목록 수집 불가: <HttpError 404 when requesting https://youtube.googleapis.com/youtube/v3/captions?part=snippet&videoId=7ZUTtniEryg&key=AIzaSyBtN4X2nUZqmu1G_e9sRpOWj6Nr6Y9qT-g&alt=json returned \"The video identified by the <code>videoId</code> parameter could not be found.\". Details: \"[{'message': 'The video identified by the <code>videoId</code> parameter could not be found.', 'domain': 'youtube.caption', 'reason': 'videoNotFound', 'location': 'videoId', 'locationType': 'parameter'}]\">"
+    }
+}
