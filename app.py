@@ -145,7 +145,8 @@ from flask import request
 
 # app = Flask(__name__)
 
-def get_youtube_transcript(video_url, languages=None, save_to_json=None):
+@app.route('/transcript', methods=['POST'])
+def get_youtube_transcript():
     """
     유튜브 영상의 자막을 추출하는 함수
     
@@ -157,6 +158,14 @@ def get_youtube_transcript(video_url, languages=None, save_to_json=None):
     Returns:
     - 자막 데이터 리스트 (각 항목: {'text': str, 'start': float, 'duration': float})
     """
+    data = request.json
+    video_url = data.get('video_url')
+    languages = data.get('languages')
+    save_to_json = data.get('save_to_json')
+    
+    if not video_url:
+        return jsonify({"status": "error", "message": "video_url is required"}), 400
+    
     # YouTube URL에서 video_id 분리
     # 예: https://www.youtube.com/watch?v=abcd1234 -> abcd1234
     video_id = video_url.split("v=")[-1].split("&")[0]
@@ -178,32 +187,8 @@ def get_youtube_transcript(video_url, languages=None, save_to_json=None):
                 json.dump(transcript, f, ensure_ascii=False, indent=4)
             print(f"Transcript saved to {save_to_json}")
         
-        return transcript
-
-    except Exception as e:
-        return f"Error: {e}"
-## 서버 상태 확인용
-# @app.route('/')
-# def home():
-#     return jsonify({
-#         "status": "success",
-#         "message": "Hello, World! Flask server is running."
-#     })
-## YouTube 자막 추출 API 수행
-@app.route('/transcript', methods=['POST'])
-def get_transcript():
-    data = request.json
-    video_url = data.get('video_url')
-    languages = data.get('languages')
-    
-    if not video_url:
-        return jsonify({"status": "error", "message": "video_url is required"}), 400
-    
-    try:
-        transcript = get_youtube_transcript(video_url, languages=languages)
-        if isinstance(transcript, str) and transcript.startswith("Error:"):
-            return jsonify({"status": "error", "message": transcript}), 500
         return jsonify({"status": "success", "transcript": transcript})
+
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
