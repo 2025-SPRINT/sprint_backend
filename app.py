@@ -116,7 +116,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from flask import Flask, jsonify
 from flask import request
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 def get_youtube_transcript(video_url, languages=None, save_to_json=None):
     """
@@ -156,12 +156,12 @@ def get_youtube_transcript(video_url, languages=None, save_to_json=None):
     except Exception as e:
         return f"Error: {e}"
 ## 서버 상태 확인용
-@app.route('/')
-def home():
-    return jsonify({
-        "status": "success",
-        "message": "Hello, World! Flask server is running."
-    })
+# @app.route('/')
+# def home():
+#     return jsonify({
+#         "status": "success",
+#         "message": "Hello, World! Flask server is running."
+#     })
 ## YouTube 자막 추출 API 수행
 @app.route('/transcript', methods=['POST'])
 def get_transcript():
@@ -181,8 +181,8 @@ def get_transcript():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # 사용 예시
-if __name__ == "__main__":
-    app.run(debug=True)
+# if __name__ == "__main__":
+#     app.run(debug=True)
 
 
 ############# 도현 추가 #############

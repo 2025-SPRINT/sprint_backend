@@ -4,3 +4,4 @@ __pycache__/
 .env
 .DS_Store
 GANGen-Detection-20251229T183332Z-3-001/
+debug/
