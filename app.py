@@ -10,7 +10,35 @@ def home():
     })
 
 ############# 순호 추가 #############
+from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
+from flask import request
 
+@app.route('/extract', methods=['POST'])
+def extract_video_data():
+    """
+    사용자로부터 유튜브 URL을 받아 데이터를 추출하고 
+    저장된 폴더 정보를 반환하는 엔드포인트입니다.
+    """
+    data = request.json
+    url = data.get('url')
+    api_key = get_or_save_api_key()
+    v_id = get_video_id(url)
+
+    if not v_id:
+        return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
+
+    try:
+        # 순호님이 작성한 추출 로직 실행
+        result_path = collect_and_split_data(api_key, url, v_id)
+        
+        return jsonify({
+            "status": "success",
+            "video_id": v_id,
+            "storage_path": result_path,
+            "files": ["data_api_origin.json", "data_ytdlp_origin.json", "video.mp4", "thumbnail.jpg"]
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 ############# 현석 추가 #############
