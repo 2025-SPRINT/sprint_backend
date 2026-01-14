@@ -129,3 +129,5 @@ xmltodict==1.0.2
 yarl==1.22.0
 youtube-transcript-api==1.2.3
 zstandard==0.25.0
+yt-dlp
+google-api-python-client

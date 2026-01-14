@@ -11,44 +11,43 @@ def test_api(port):
     
     # 1. Home
     print("\n[GET /]")
-    try:
-        res = requests.get(f"{base_url}/")
-        print(f"Status: {res.status_code}, Response: {res.text[:100]}")
-    except Exception as e:
-        print(f"Error: {e}")
+    make_request(f"{base_url}/", "GET")
 
     # 2. Health
     print("\n[GET /health]")
-    try:
-        res = requests.get(f"{base_url}/health")
-        print(f"Status: {res.status_code}, Response: {res.text[:100]}")
-    except Exception as e:
-        print(f"Error: {e}")
+    make_request(f"{base_url}/health", "GET")
 
     # 3. Transcript
     print("\n[POST /transcript]")
     payload = {"video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-    try:
-        res = requests.post(f"{base_url}/transcript", json=payload)
-        print(f"Status: {res.status_code}, Response: {res.text[:100]}")
-    except Exception as e:
-        print(f"Error: {e}")
+    make_request(f"{base_url}/transcript", "POST", payload)
 
     # 4. Analyze (Gemini)
     print("\n[POST /analyze]")
-    payload = {"script": "테스트 스크립트입니다."}
+    payload = {"script": "이 제품은 특허 제10-2023-1234567호로 보호받고 있습니다."}
+    make_request(f"{base_url}/analyze", "POST", payload)
+
+def make_request(url, method, payload=None):
     try:
-        res = requests.post(f"{base_url}/analyze", json=payload)
-        print(f"Status: {res.status_code}, Response: {res.text[:100]}")
+        if method == "GET":
+            res = requests.get(url)
+        else:
+            res = requests.post(url, json=payload)
+        
+        try:
+            json_data = res.json()
+            print(f"Status: {res.status_code}")
+            print(f"Response: {json.dumps(json_data, ensure_ascii=False, indent=2)}")
+        except:
+            print(f"Status: {res.status_code}, Response: {res.text[:500]}")
     except Exception as e:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    # app.py의 중간(185라인)에서 서버가 시작되면 5000번 포트가 사용됩니다.
-    # 만약 185라인을 주석 처리하고 실행하신다면 8080번 포트가 사용됩니다.
     import sys
+    # Defaults to 8080 as per the user's latest app.py structure
     port = 8080
     if len(sys.argv) > 1:
-        port = int(sys.argv[1])
+        port = sys.argv[1]
     
     test_api(port)

@@ -158,6 +158,7 @@ def get_youtube_transcript():
     Returns:
     - 자막 데이터 리스트 (각 항목: {'text': str, 'start': float, 'duration': float})
     """
+
     data = request.json
     video_url = data.get('video_url')
     languages = data.get('languages')
@@ -195,6 +196,24 @@ def get_youtube_transcript():
 # 사용 예시
 # if __name__ == "__main__":
 #     app.run(debug=True)
+
+# 수정 제안 예시
+from youtube_transcript_api.formatters import TextFormatter
+
+def get_youtube_transcript2(video_url, languages=['ko', 'en']):
+    from yt_shorts import get_video_id
+    video_id = get_video_id(video_url) # 다양한 URL 지원
+    if not video_id: return None
+
+    try:
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=languages)
+        
+        # 순수 텍스트로 변환하여 Gemini 분석에 최적화
+        formatter = TextFormatter()
+        return formatter.format_transcript(transcript).strip()
+    except Exception:
+        return None
 
 
 ############# 도현 추가 #############
@@ -262,12 +281,10 @@ def analyze_youtube():
 
     # 2. 자막 추출 (YouTubeTranscriptApi)
     try:
-        # 자막 리스트 가져오기
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
-        
-        # 분석을 위해 자막을 하나의 텍스트(문자열)로 변환
-        formatter = TextFormatter()
-        script_text = formatter.format_transcript(transcript_list).strip()
+        script_text = get_youtube_transcript2(video_url)
+        print('#' * 80)
+        print(script_text)
+        print('#' * 80)
 
     except Exception as e:
         return jsonify({
@@ -293,4 +310,5 @@ def analyze_youtube():
         }), 500
 
 if __name__ == '__main__':
+    # print(get_youtube_transcript2())
     app.run(debug=True, host='0.0.0.0', port=8080)
