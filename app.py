@@ -13,19 +13,11 @@ def home():
 from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
 from flask import request
 
-<<<<<<< HEAD
-from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
-from flask import request
-
-@app.route('/extract', methods=['POST'])
-def extract_video_data():
-=======
 @app.route('/extract', methods=['POST'])
 def extract_video_data():
     """
    
     """
->>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
     data = request.json
     url = data.get('url')
     api_key = get_or_save_api_key()
@@ -35,10 +27,7 @@ def extract_video_data():
         return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
 
     try:
-<<<<<<< HEAD
-=======
        
->>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
         result_path = collect_and_split_data(api_key, url, v_id)
         
         return jsonify({
@@ -49,10 +38,6 @@ def extract_video_data():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-<<<<<<< HEAD
-
-=======
->>>>>>> d1cdcdb3b5a961068658acdab4bdf24094bc7bb8
 
 
 ############# 현석 추가 #############
