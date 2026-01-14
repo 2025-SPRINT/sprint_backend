@@ -10,14 +10,9 @@ def home():
     })
 
 ############# 순호 추가 #############
-from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
-from flask import request
 
 @app.route('/extract', methods=['POST'])
 def extract_video_data():
-    """
-   
-    """
     data = request.json
     url = data.get('url')
     api_key = get_or_save_api_key()
@@ -27,15 +22,18 @@ def extract_video_data():
         return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
 
     try:
-       
+        # 1. 순호님이 영상을 저장하고 그 폴더 경로를 받음
         result_path = collect_and_split_data(api_key, url, v_id)
-        
+       
+        # 4. 최종 결과 반환
         return jsonify({
             "status": "success",
             "video_id": v_id,
             "storage_path": result_path,
-            "files": ["data_api_origin.json", "data_ytdlp_origin.json", "video.mp4", "thumbnail.jpg"]
+            "files": ["data_api_origin.json", "data_ytdlp_origin.json", "video.mp4", "thumbnail.jpg"],
+
         })
+        
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -132,7 +130,43 @@ def analyze_npr():
         }
     })
 
+########################################
+video_path = os.path.join(result_path, "video.mp4")
+@app.route('/extract', methods=['POST'])
+def extract_video_data():
+    data = request.json
+    url = data.get('url')
+    api_key = get_or_save_api_key()
+    v_id = get_video_id(url)
 
+    if not v_id:
+        return jsonify({"status": "error", "message": "Invalid YouTube URL"}), 400
+
+    try:
+        # 1. 순호님이 영상을 저장하고 그 폴더 경로를 받음
+        result_path = collect_and_split_data(api_key, url, v_id)
+        
+        # 2. 현석님 코드에서 필요한 '정확한 비디오 파일 경로' 생성
+        # result_path(폴더) + "video.mp4"(파일명)
+        video_path = os.path.join(result_path, "video.mp4")
+        
+        # 3. 현석님의 분석 함수 호출 (생성한 video_path를 인자로 전달)
+        # 현석님 코드의 def analyze_npr(path = None): 이 이 값을 받게 됩니다.
+        npr_response = analyze_npr(path=video_path)
+        npr_result = npr_response.get_json()
+
+        # 4. 최종 결과 반환
+        return jsonify({
+            "status": "success",
+            "video_id": v_id,
+            "storage_path": result_path,
+            "files": ["data_api_origin.json", "data_ytdlp_origin.json", "video.mp4", "thumbnail.jpg"],
+            # 현석님의 분석 결과 중 필요한 부분만 추출해서 추가
+            "ai_analysis": npr_result.get("analysis_results")
+        })
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 ############# 승언 추가 #############
 # youtube-transcript-api 패키지 설치
 # 주의: 설치 후 커널을 재시작해야 할 수 있습니다 (Kernel -> Restart Kernel)
