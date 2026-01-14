@@ -2,7 +2,13 @@ import torch
 import cv2
 from PIL import Image
 import torchvision.transforms as transforms
+import sys
 import os
+# 현재 파일의 디렉토리를 sys.path에 추가하여 networks 등을 임포트할 수 있게 함
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 from networks.resnet import resnet50 
 
 class NPRDetector:
