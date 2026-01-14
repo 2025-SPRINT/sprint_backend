@@ -1,7 +1,5 @@
 from flask import Flask, jsonify
 
-from gemini_main import
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -189,7 +187,33 @@ if __name__ == "__main__":
 
 ############# 도현 추가 #############
 
+from gemini_main import main as gemini_analyze, PROMPT_1
+import asyncio, os
 
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    data = request.get_json()
+    if not data or 'script' not in data:
+        return jsonify({
+            "status": "error",
+            "message": "Missing 'script' in request body"
+        }), 400
+    
+    script = data.get('script')
+    prompt = data.get('prompt', PROMPT_1)
+    
+    try:
+        # gemini_analyze is an async function, so we run it using asyncio
+        report = asyncio.run(gemini_analyze(prompt, script))
+        return jsonify({
+            "status": "success",
+            "report": report
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 ###################################
 
