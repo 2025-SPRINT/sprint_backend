@@ -229,11 +229,68 @@ def analyze():
 
 ###################################
 
-@app.route('/health')
-def health():
-    return jsonify({
-        "status": "healthy"
-    })
+import json
+import asyncio
+from flask import Flask, request, jsonify
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
+
+# gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
+from gemini_main import main as gemini_analyze, PROMPT_1
+
+@app.route('/analyze-youtube', methods=['POST'])
+def analyze_youtube():
+    """
+    유튜브 URL을 입력받아 자막 추출 후 Gemini 분석 리포트를 반환
+    """
+    data = request.get_json()
+    if not data or 'video_url' not in data:
+        return jsonify({
+            "status": "error",
+            "message": "Missing 'video_url' in request body"
+        }), 400
+
+    video_url = data.get('video_url')
+    languages = data.get('languages', ['ko', 'en']) # 기본 언어 설정
+    custom_prompt = data.get('prompt', PROMPT_1)    # 사용자 정의 프롬프트 혹은 기본값
+    
+    # 1. YouTube Video ID 추출
+    try:
+        video_id = video_url.split("v=")[-1].split("&")[0]
+    except Exception:
+        return jsonify({"status": "error", "message": "Invalid YouTube URL format"}), 400
+
+    # 2. 자막 추출 (YouTubeTranscriptApi)
+    try:
+        # 자막 리스트 가져오기
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+        
+        # 분석을 위해 자막을 하나의 텍스트(문자열)로 변환
+        formatter = TextFormatter()
+        script_text = formatter.format_transcript(transcript_list).strip()
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"자막을 가져오는데 실패했습니다: {str(e)}"
+        }), 500
+
+    # 3. Gemini 분석 (async 함수 호출)
+    try:
+        # asyncio.run을 사용하여 비동기 분석 함수 실행
+        report = asyncio.run(gemini_analyze(custom_prompt, script_text))
+        
+        return jsonify({
+            "status": "success",
+            "video_id": video_id,
+            "report": report
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Gemini 분석 중 오류 발생: {str(e)}"
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
