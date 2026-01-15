@@ -4,8 +4,14 @@ import json
 from datetime import datetime
 from google import genai
 from google.genai import types
+from typing import Literal, List, Optional
+from typing_extensions import TypedDict
 from dotenv import load_dotenv
 from mcp_connector import get_kipris_connector
+
+# --- Configuration ---
+USE_JSON_OUTPUT = True  # Set to True to enable JSON structured output
+# ---------------------
 
 class GeminiDebugLogger:
     def __init__(self):
@@ -257,7 +263,153 @@ PROMPT_4 = """
 이후 입력되는 [광고 스크립트]에 대해 위 가이드라인에 따라 분석 보고서를 작성하세요.
 """
 
-SCRIPT = "제발 키 키우려고 이상한 짓 좀 하지 마세요. 키 167 아빠인 제가 두 와드 180까지 키우고 조카들도 전부 180 이상으로 키우는 중인데 이것만 더 빨리 알았어도 우리 와이프도 덜 고생하고 아들들 키도 훨씬 더 많이 컸을 거예요. 지금 지금 제가 다시 성장기인 두 아들을 키우는 시절로 돌아간다면 아이들의 성장판이 조금이라도 열려 있다면 무조건 이것부터 할 거예요. IGF1 직접 먹이기. 몸 말도 안 되는 소린가 싶으시죠? IGF1이 몸 안에 많을수록 키가 쭉쭉 크는 건 부모라면 다들 알고 계실 테고 조금 늘리겠다고 연애 2천만 원짜리 성장 주사도 고민해 보셨을 테니까요. 그때 그걸 먹인다니 네. 이제 무조건 먹이셔야 큽니다. IGF1는 단백질이라 먹자마자 위에서 분해가 되기에 섬장판까지 다르지 못해서 선장 주사를 무릎에 꽂는 방법밖에 없었지만 이젠 유럽 특허 기술로 IGF의 후원을 먹는게 가능해졌어요. 더 대박인 건요. 주사로 인위로 늘리는게 아닌 성장기 권장량에 맞게 뼈밀도에 천천히 작용되다 보니 키가 그냥 클뿐 아니라 안전하게 180도 가능해요. 이미 유럽에선 천연 성장 주사로 검중돼서 엄청나게 먹이고 있는데 조만간 한국에서도 엄청나게 먹이실 것 같아서 미리 주의를 주자면 이게 성장 주사만큼 효과는 엄청난데 부작용은 없고 접근성은 너무 좋아졌다 보니 이미 키 큰 아이들에게도 욕심으로 막 먹이고 싶으실 거예요. 절대 그러지 마세요. 이미 키가 작은 아이들도 너무 잘 크니까 이미 IGF1이 많은 키큰 아이들한테 과성장을 유도할 수 있거든요. 저희 아이들에겐. 국내 유일하게 식약체 인증받은 먹는 성장인자 IGF업을 먹여 왔었는데 IGF업 말고도 유럽 제품을 직구해서 드시는 것도 좋아요. 혹시 아이 키 때문에 고민인 분들은 성장 주사 말고 이거부터 6개월 정도 꾸준히 먹여 보세요. 차원이 다르게 클 겁니다."
+PROMPT_5 = """
+# Role
+당신은 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 분석 리포트를 제공하는 것입니다.
+
+# Principles
+1. **중립성 유지**: 광고가 무조건 거짓이라거나, 무조건 진실이라고 예단하지 마십시오. 오직 '검증된 증거'에 기반하여 판단하십시오.
+2. **증거 기반 평가 (Evidence-Based)**: 모든 평가는 KIPRIS(특허) 및 Google 검색(일반 정보) 결과에 근거해야 합니다. 추측에 의한 평가는 금지합니다.
+3. **환각 방지 (Chain of Thought)**: 즉시 결론을 내리지 말고, 반드시 [주장 식별 -> 검증 수행 -> 결과 비교 -> 최종 평가]의 사고 과정을 거치십시오.
+
+# Process (Thinking Flow)
+분석은 반드시 다음 순서로 진행하십시오:
+
+1. **주장 식별 (Claims Extraction)**: 광고 스크립트에서 검증이 필요한 핵심 주장(특허 번호, 기술명, 효과 통계, 인증 여부 등)을 추출합니다.
+2. **사실 검증 (Verification)**:
+   - '특허', '출원', '기술' 언급 시: 제공된 KIPRIS 도구를 사용하여 실제 등록 여부와 내용을 확인합니다. (유사 키워드로도 검색 시도할 것)
+   - 일반 주장 및 인증 언급 시: Google 검색 그라운딩을 통해 해당 제품/성분의 효능, 식약처 인증 여부, 관련 뉴스를 확인합니다.
+3. **비교 및 평가 (Evaluation)**: 광고의 주장과 검색된 사실이 일치하는지 비교합니다.
+   - 일치: '신뢰할 수 있음'
+   - 부분 일치/과장: '주의 필요' (사실과 다른 부분 명시)
+   - 불일치/거짓: '위험/허위' (검색되지 않거나 사실과 정반대임)
+4. **리포트 작성 (Report Generation)**: 위 평가를 바탕으로 최종 사용자에게 전달할 보고서를 작성합니다.
+
+# Output Format
+보고서는 디지털 정보 취약 계층(고령자, 청소년 등)도 이해하기 쉬운 친절하고 명확한 어조로 작성하십시오.
+
+1. **종합 평가 등급**: [안전 / 주의 / 위험 / 정보 부족] 중 하나를 선택하고, 그 이유를 한 문장으로 요약합니다.
+2. **주요 검증 결과**:
+   - 광고 문구: "광고에서 주장하는 문장"
+   - 검증된 사실: 검색을 통해 확인된 객관적 사실
+   - 판단 근거: (특허 검색 결과 또는 구글 검색 출처)
+3. **특허/인증 정밀 분석** (해당되는 경우만 작성):
+   - 언급된 특허가 실제로 존재하는지, 광고하는 효능과 일치하는 특허인지 명시합니다. KIPRIS 도구 사용 결과를 구체적으로 기술하십시오.
+4. **소비자 가이드**: 소비자가 유의해야 할 점이나 전문가적 조언을 제공합니다.
+
+# Context
+이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
+"""
+
+PROMPT_6 = """
+# Role
+당신은 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 분석 리포트를 제공하는 것입니다.
+
+# Principles
+1. **중립성 유지**: 광고가 무조건 거짓이라거나, 무조건 진실이라고 예단하지 마십시오. 오직 '검증된 증거'에 기반하여 판단하십시오.
+2. **증거 기반 평가 (Evidence-Based)**: 모든 평가는 KIPRIS(특허) 및 Google 검색(일반 정보) 결과에 근거해야 합니다. 추측에 의한 평가는 금지합니다.
+3. **환각 방지 (Chain of Thought)**: 즉시 결론을 내리지 말고, 반드시 [주장 식별 -> 검증 수행 -> 결과 비교 -> 최종 평가]의 사고 과정을 거치십시오.
+
+# Process (Thinking Flow)
+분석은 반드시 다음 순서로 진행하십시오:
+
+1. **주장 식별 (Claims Extraction)**: 광고 스크립트에서 검증이 필요한 핵심 주장(특허 번호, 기술명, 효과 통계, 인증 여부 등)을 추출합니다.
+2. **사실 검증 (Verification)**:
+   - '특허', '출원', '기술' 언급 시: 제공된 KIPRIS 도구를 사용하여 실제 등록 여부와 내용을 확인합니다. (유사 키워드로도 검색 시도할 것)
+   - 일반 주장 및 인증 언급 시: Google 검색 그라운딩을 통해 해당 제품/성분의 효능, 식약처 인증 여부, 관련 뉴스를 확인합니다.
+3. **비교 및 평가 (Evaluation)**: 광고의 주장과 검색된 사실이 일치하는지 비교합니다.
+   - 일치: '신뢰할 수 있음'
+   - 부분 일치/과장: '주의 필요' (사실과 다른 부분 명시)
+   - 불일치/거짓: '위험/허위' (검색되지 않거나 사실과 정반대임)
+4. **결과 생성 (JSON Generation)**: 위 평가를 바탕으로 주어진 JSON Schema에 맞춰 결과를 생성합니다.
+
+# Output Guidelines
+- `reliability_level`: "안전", "주의", "위험", "정보 부족" 중 하나 선택.
+- `summary`: 소비자에게 가장 치명적인 문제점을 한 줄로 요약.
+- `issues`: 일반 소비자가 현혹되기 쉬운 심리적 기만 요소나 의학적 왜곡 사항을 리스트로 작성.
+- `patent_check`: 특허 관련 언급이 있을 경우 상세 분석. 없으면 `status`를 "해당 없음"으로 표기.
+- `evidence`: 검색을 통해 확인된 객관적 근거들.
+- `consultation`: 소비자가 유의해야 할 점이나 전문가적 조언. 친절하고 명확한 어조.
+
+# Context
+이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
+"""
+
+# --- JSON Schemas ---
+class PatentCheck(TypedDict):
+    status: Literal["존재", "미확인", "허위", "해당 없음"]
+    details: str
+    patent_number: Optional[str]
+
+class EvidenceItem(TypedDict):
+    source: str
+    url: Optional[str]
+    fact: str
+
+class AdAnalysisResult(TypedDict):
+    reliability_level: Literal["안전", "주의", "위험", "정보 부족"]
+    summary: str
+    issues: List[str]
+    patent_check: PatentCheck
+    evidence: List[EvidenceItem]
+    consultation: str
+# --------------------
+
+SCRIPT = "아니, 아직도 안 믿으세요. 비문증 방치하면 실명이라니까요. 제가 김포에서 초등부 야구 감독으로 15년째인데요. 어느 날 연습 중에 애가 던진 공에 눈을 정통으로 맞은 거예요. 그때 치료 잘 받고 괜찮아졌다고 생각했는데 며칠 뒤부터 눈앞에 계속 날파리 같은게 떠다니는 거예요. 알고 보니 이게 눈 안에 무슨 유리채 찔꺼기가 뭉친 비문증이라요. 처음엔 시간 지나면 없어지겠지 했는데 경험 갔더니 실명 직전 남결합니다. 애들 가르치는 사람인데 실명이라니 순간 숨이 턱 막히더라고요. 그래서 제가 단원합니다. 이거 방치하면 막막 찢어지고 실명업입니다. 실명. 그런데 이거 먹고도 그대로면 제가 전재산 드리겠습니다. 딱 일주일만 먹어 보세요. 이건 진짜 국내 최초로 유일하게 비문개 선택을 받은 비문증 치료제예요. 다른 거랑은 비교도 하지 마세요. 하루에 한 번만 챙겨 드세요. 얼마나 편해요?이 좋은 걸 꾸준히 먹기만 하면 실명을 안 한다는데. 그리고 지금 아니면 고압량 제고는 구하지도 못해요. 3일루 후에 고압량 제거 단종된다고 공식 발표는 미루면 진짜 끝납니다."
+
+PROMPT_6 = """
+# Role
+당신은 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 분석 리포트를 제공하는 것입니다.
+
+# Principles
+1. **중립성 유지**: 광고가 무조건 거짓이라거나, 무조건 진실이라고 예단하지 마십시오. 오직 '검증된 증거'에 기반하여 판단하십시오.
+2. **증거 기반 평가 (Evidence-Based)**: 모든 평가는 KIPRIS(특허) 및 Google 검색(일반 정보) 결과에 근거해야 합니다. 추측에 의한 평가는 금지합니다.
+3. **환각 방지 (Chain of Thought)**: 즉시 결론을 내리지 말고, 반드시 [주장 식별 -> 검증 수행 -> 결과 비교 -> 최종 평가]의 사고 과정을 거치십시오.
+
+# Process (Thinking Flow)
+분석은 반드시 다음 순서로 진행하십시오:
+
+1. **주장 식별 (Claims Extraction)**: 광고 스크립트에서 검증이 필요한 핵심 주장(특허 번호, 기술명, 효과 통계, 인증 여부 등)을 추출합니다.
+2. **사실 검증 (Verification)**:
+   - '특허', '출원', '기술' 언급 시: 제공된 KIPRIS 도구를 사용하여 실제 등록 여부와 내용을 확인합니다. (유사 키워드로도 검색 시도할 것)
+   - 일반 주장 및 인증 언급 시: Google 검색 그라운딩을 통해 해당 제품/성분의 효능, 식약처 인증 여부, 관련 뉴스를 확인합니다.
+3. **비교 및 평가 (Evaluation)**: 광고의 주장과 검색된 사실이 일치하는지 비교합니다.
+   - 일치: '신뢰할 수 있음'
+   - 부분 일치/과장: '주의 필요' (사실과 다른 부분 명시)
+   - 불일치/거짓: '위험/허위' (검색되지 않거나 사실과 정반대임)
+4. **결과 생성 (JSON Generation)**: 위 평가를 바탕으로 주어진 JSON Schema에 맞춰 결과를 생성합니다.
+
+# Output Guidelines
+- `reliability_level`: "안전", "주의", "위험", "정보 부족" 중 하나 선택.
+- `summary`: 소비자에게 가장 치명적인 문제점을 한 줄로 요약.
+- `issues`: 일반 소비자가 현혹되기 쉬운 심리적 기만 요소나 의학적 왜곡 사항을 리스트로 작성.
+- `patent_check`: 특허 관련 언급이 있을 경우 상세 분석. 없으면 `status`를 "해당 없음"으로 표기.
+- `evidence`: 검색을 통해 확인된 객관적 근거들.
+- `consultation`: 소비자가 유의해야 할 점이나 전문가적 조언. 친절하고 명확한 어조.
+
+# Context
+이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
+"""
+
+# --- JSON Schemas ---
+class PatentCheck(TypedDict):
+    status: Literal["존재", "미확인", "허위", "해당 없음"]
+    details: str
+    patent_number: Optional[str]
+
+class EvidenceItem(TypedDict):
+    source: str
+    url: Optional[str]
+    fact: str
+
+class AdAnalysisResult(TypedDict):
+    reliability_level: Literal["안전", "주의", "위험", "정보 부족"]
+    summary: str
+    issues: List[str]
+    patent_check: PatentCheck
+    evidence: List[EvidenceItem]
+    consultation: str
+# --------------------
 
 async def main(prompt, script):
     load_dotenv()
@@ -268,46 +420,70 @@ async def main(prompt, script):
     connector = await get_kipris_connector()
     kipris_tools = await connector.get_gemini_tools()
 
+
     # 2. Add Google Search grounding tool
     google_search_tool = types.Tool(google_search=types.GoogleSearch())
     
     # 3. Combine tools
-    # Removed Google Search tool because it conflicts with custom function calling (error 400)
-    config = types.GenerateContentConfig(
-        tools=[types.Tool(function_declarations=kipris_tools)]
-    )
-
-    full_prompt = f"{prompt}\n\n[광고 스크립트]:\n{script}"
-    history = [types.Content(role="user", parts=[types.Part(text=full_prompt)])]
+    # Attempting to combine both into a single Tool object to avoid compatibility issues
     
-    print("\nStart history: ", history, '\n')
+    if USE_JSON_OUTPUT:
+        target_prompt = PROMPT_6
+        # Configure for JSON output
+        config = types.GenerateContentConfig(
+            tools=[
+                types.Tool(
+                    google_search=types.GoogleSearch(),
+                    function_declarations=kipris_tools
+                )
+            ],
+            response_mime_type="application/json",
+            response_schema=AdAnalysisResult
+        )
+        print("모드: JSON 구조화 출력 (PROMPT_6)")
+    else:
+        target_prompt = PROMPT_5
+        # Original configuration
+        config = types.GenerateContentConfig(
+            tools=[
+                types.Tool(
+                    google_search=types.GoogleSearch(),
+                    function_declarations=kipris_tools
+                )
+            ]
+        )
+        print("모드: 일반 텍스트 출력 (PROMPT_5)")
+
+    full_prompt = f"{target_prompt}\n\n[광고 스크립트]:\n{script}"
+    history = [types.Content(role="user", parts=[types.Part(text=full_prompt)])]
 
     # Init Logger
     logger = GeminiDebugLogger()
     logger.log_api_call("user", full_prompt)
 
-    print("Gemini에게 요청을 보내는 중(KIPRIS 특허 검색 도구 포함)...")
+    print("Gemini에게 요청을 보내는 중(KIPRIS + Google Search)...")
     
     try:
+        # Initial call
         response = client.models.generate_content(
             model="gemini-3-flash-preview", 
             contents=history,
             config=config
         )
         
-        # Log first model response (could be text or tool call)
+        # Log first model response
         res_text = response.text if response.candidates[0].content.parts and any(p.text for p in response.candidates[0].content.parts) else "[Tool Call Only]"
         logger.log_api_call("model", res_text, 
                            function_calls=[p.function_call for p in response.candidates[0].content.parts if p.function_call])
 
-        current_response = response
         max_turns = 10
         turn_count = 0
         total_usage = response.usage_metadata
+        current_response = response
 
         while turn_count < max_turns and current_response.candidates[0].content.parts and any(p.function_call for p in current_response.candidates[0].content.parts):
             turn_count += 1
-            # Add model's response (containing function calls) to history
+            # Add model's response to history
             history.append(current_response.candidates[0].content)
             
             tool_parts = []
@@ -315,49 +491,44 @@ async def main(prompt, script):
                 if part.function_call:
                     name = part.function_call.name
                     args = part.function_call.args
-                    print(f"로그: 도구 호출 중 - {name}({args})")
                     
-                    # Execute MCP tool
-                    result = await connector.call_tool(name, args)
+                    # 1. Skip non-MCP tools (like google_search)
+                    # These are handled by Gemini and should not be passed to the MCP connector.
+                    if name == "google_search":
+                        print(f"로그: 내장 도구 발견(스킵) - {name}")
+                        continue
+
+                    print(f"로그: MCP 도구 호출 중 - {name}({args})")
                     
-                    # Extract text content from result
-                    content_text = ""
-                    if hasattr(result, 'content') and isinstance(result.content, list):
-                        content_text = "\n".join([c.text for c in result.content if hasattr(c, 'text')])
-                    else:
-                        content_text = str(result)
-
-                    # Log Tool Result
-                    logger.log_tool_result(name, content_text)
-
-                    # Format result for Gemini
-                    tool_parts.append(types.Part.from_function_response(
-                        name=name,
-                        response={"result": content_text}
-                    ))
+                    # 2. Execute MCP tool
+                    try:
+                        result = await connector.call_tool(name, args)
+                        content_text = "\n".join([c.text for c in result.content if hasattr(c, 'text')]) if hasattr(result, 'content') else str(result)
+                        logger.log_tool_result(name, content_text)
+                        tool_parts.append(types.Part.from_function_response(name=name, response={"result": content_text}))
+                    except Exception as e:
+                        print(f"도구 호출 오류 ({name}): {e}")
+                        tool_parts.append(types.Part.from_function_response(name=name, response={"error": str(e)}))
             
             if tool_parts:
-                # Add tool responses to history with 'tool' role
                 history.append(types.Content(role="tool", parts=tool_parts))
-                
-                # Continue generating based on accumulated history
                 current_response = client.models.generate_content(
                     model="gemini-3-flash-preview",
                     contents=history,
                     config=config
                 )
                 
-                # IMPORTANT: Accumulate Usage
                 if current_response.usage_metadata:
                     total_usage.prompt_token_count += current_response.usage_metadata.prompt_token_count
                     total_usage.candidates_token_count += current_response.usage_metadata.candidates_token_count
                     total_usage.total_token_count += current_response.usage_metadata.total_token_count
 
-                # IMPORTANT: Log EVERY response from Gemini inside the loop
                 inner_text = current_response.text if current_response.candidates[0].content.parts and any(p.text for p in current_response.candidates[0].content.parts) else "[Tool Call Only]"
                 logger.log_api_call("model", inner_text,
                                    function_calls=[p.function_call for p in current_response.candidates[0].content.parts if p.function_call])
             else:
+                # If tool_parts is empty (e.g., only google_search was called), 
+                # we break the loop to avoid an empty request.
                 break
         
         if turn_count >= max_turns:
@@ -365,7 +536,19 @@ async def main(prompt, script):
 
         final_text = current_response.text if current_response.candidates[0].content.parts and any(p.text for p in current_response.candidates[0].content.parts) else "분석 결과를 생성하지 못했습니다."
         print("\n[최종 분석 결과]\n")
-        print(final_text)
+        
+        if USE_JSON_OUTPUT:
+            try:
+                # Pretty print JSON
+                json_data = json.loads(final_text)
+                print(json.dumps(json_data, indent=2, ensure_ascii=False))
+            except json.JSONDecodeError:
+                print("JSON 파싱 실패:")
+                print(final_text)
+        else:
+            print(final_text)
+            
+        print("\n" + "="*50 + "\n")
 
         # Citation handling
         text_with_citations = add_citations(current_response)
@@ -375,7 +558,7 @@ async def main(prompt, script):
         debug_path = logger.save()
         print(f"\n[Debug] 상세 API 호출 흐름이 저장되었습니다: {debug_path}")
 
-        save_response_to_file(current_response.usage_metadata, PROMPT_1, text_with_citations)
+        save_response_to_file(total_usage, PROMPT_1, text_with_citations)
 
         return final_text
     finally:
@@ -424,4 +607,4 @@ def save_response_to_file(token_usage, prompt_text, response_text, folder_path="
 
 if __name__ == "__main__":
     print("Start main")
-    asyncio.run(main(PROMPT_1, SCRIPT))
+    asyncio.run(main("", SCRIPT))

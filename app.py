@@ -433,9 +433,16 @@ def analyze():
     try:
         # gemini_analyze is an async function, so we run it using asyncio
         report = asyncio.run(gemini_analyze(prompt, script))
+
+        # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
+        try:
+            report_data = json.loads(report)
+        except (TypeError, json.JSONDecodeError):
+            report_data = report
+
         return jsonify({
             "status": "success",
-            "report": report
+            "report": report_data
         })
     except Exception as e:
         return jsonify({
@@ -494,10 +501,16 @@ def analyze_youtube():
         # asyncio.run을 사용하여 비동기 분석 함수 실행
         report = asyncio.run(gemini_analyze(custom_prompt, script_text))
         
+        # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
+        try:
+            report_data = json.loads(report)
+        except (TypeError, json.JSONDecodeError):
+            report_data = report
+
         return jsonify({
             "status": "success",
             "video_id": video_id,
-            "report": report
+            "report": report_data
         })
 
     except Exception as e:
