@@ -68,8 +68,19 @@ def collect_and_split_data(api_key, url, video_id):
 
     # --- [2] yt-dlp 데이터 수집 및 영상 다운로드 ---
     ydl_opts = {
-        'format': 'bestvideo+bestaudio/best',
+        'format': 'bv*+ba/best',
         'outtmpl': os.path.join(target_dir, "video.%(ext)s"),
+        'merge_output_format': 'mp4',
+        'postprocessors': [
+            {
+             'key': 'FFmpegVideoConvertor',
+             'preferedformat': 'mp4',
+            }
+      ],
+      'postprocessor_args': [
+        '-c:v', 'libx264',
+        '-c:a', 'aac'
+      ],
         'writethumbnail': True,
         'quiet': True,
         'noplaylist': True,
@@ -97,7 +108,7 @@ def collect_and_split_data(api_key, url, video_id):
 
     # 파일 2: yt-dlp 메타데이터 원본 (기술 스펙 등)
     with open(os.path.join(target_dir, "data_ytdlp_origin.json"), 'w', encoding='utf-8') as f:
-        json.dump(ytdlp_raw_info, f, indent=4, ensure_ascii=False)
+        json.dump(ytdlp_raw_info, f, indent=4, ensure_ascii=False, default=str)
 
     return target_dir
 
