@@ -5,6 +5,8 @@ import os
 import yt_dlp
 import json
 from datetime import datetime
+from utils.profiler import trace, profiler
+import time
 
 # 1. API 키 설정 및 로드 함수
 API_KEY_FILE = 'api_key.txt'
@@ -28,6 +30,7 @@ def get_video_id(url):
         if match: return match.group(1)
     return None
 
+@trace("YouTube Logic: Collect & Split Data")
 def collect_and_split_data(api_key, url, video_id):
     """API 데이터와 yt-dlp 데이터를 각각 추출하여 개별 JSON으로 저장합니다."""
     youtube = build('youtube', 'v3', developerKey=api_key)
@@ -40,11 +43,13 @@ def collect_and_split_data(api_key, url, video_id):
     print(f"🚀 [데이터 전수 추출 시작] ID: {video_id}")
 
     # --- [1] YouTube API 데이터 수집 ---
+    start_yt_api = time.perf_counter()
     # 1-1. 영상 상세 정보 (Snippet, Statistics 등 모든 Part)
     video_raw = youtube.videos().list(
         part="snippet,statistics,contentDetails,status,topicDetails,recordingDetails,liveStreamingDetails,localizations,player",
         id=video_id
     ).execute()
+    profiler.log_manual("YouTube API: Get Video Info", time.perf_counter() - start_yt_api)
 
     # 1-2. 댓글 정보 (최대 100개 원본)
     try:
@@ -67,6 +72,7 @@ def collect_and_split_data(api_key, url, video_id):
         captions_raw = {"error": f"자막 목록 수집 불가: {str(e)}"}
 
     # --- [2] yt-dlp 데이터 수집 및 영상 다운로드 ---
+    start_ytdlp = time.perf_counter()
     ydl_opts = {
         'format': 'bv*+ba/best',
         'outtmpl': os.path.join(target_dir, "video.%(ext)s"),
@@ -88,6 +94,7 @@ def collect_and_split_data(api_key, url, video_id):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ytdlp_raw_info = ydl.extract_info(url, download=True)
+        profiler.log_manual("yt-dlp: Extract & Download", time.perf_counter() - start_ytdlp)
         # 썸네일 파일명 정리 (확장자 무관하게 thumbnail.jpg로 변경)
         for f in os.listdir(target_dir):
             if f.endswith(('.webp', '.png', '.jpg')) and "video" not in f:

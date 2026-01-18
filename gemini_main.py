@@ -8,6 +8,8 @@ from typing import Literal, List, Optional
 from typing_extensions import TypedDict
 from dotenv import load_dotenv
 from mcp_connector import get_kipris_connector
+from utils.profiler import trace, profiler
+import time
 
 # --- Configuration ---
 USE_JSON_OUTPUT = True  # Set to True to enable JSON structured output
@@ -56,6 +58,18 @@ class GeminiDebugLogger:
         
         if self.total_tokens:
             report.append(f"- **Token Usage**: Prompt: {self.total_tokens.prompt_token_count}, Candidates: {self.total_tokens.candidates_token_count}, Total: {self.total_tokens.total_token_count}")
+        
+        # Add Performance Profiling Section
+        from utils.profiler import profiler
+        performance_data = profiler.data
+        if performance_data:
+            report.append("\n## ⏱️ Performance Analysis")
+            report.append("| Component / Function | Calls | Total Time |")
+            report.append("| :--- | :---: | :---: |")
+            # Sort by duration descending
+            sorted_items = sorted(performance_data.items(), key=lambda x: x[1]['total_time'], reverse=True)
+            for name, stats in sorted_items:
+                report.append(f"| {name} | {stats['calls']} | {stats['total_time']:.4f}s |")
         
         report.append("\n## 💬 Communication Flow\n")
         
@@ -411,6 +425,7 @@ class AdAnalysisResult(TypedDict):
     consultation: str
 # --------------------
 
+@trace("Gemini Analysis (Full)")
 async def main(prompt, script):
     load_dotenv()
     api_key = os.getenv("API_KEY")
@@ -465,11 +480,13 @@ async def main(prompt, script):
     
     try:
         # Initial call
+        start_api = time.perf_counter()
         response = client.models.generate_content(
             model="gemini-3-flash-preview", 
             contents=history,
             config=config
         )
+        profiler.log_manual("Gemini API: First Call", time.perf_counter() - start_api)
         
         # Log first model response
         res_text = response.text if response.candidates[0].content.parts and any(p.text for p in response.candidates[0].content.parts) else "[Tool Call Only]"
@@ -502,7 +519,10 @@ async def main(prompt, script):
                     
                     # 2. Execute MCP tool
                     try:
+                        start_tool = time.perf_counter()
                         result = await connector.call_tool(name, args)
+                        profiler.log_manual(f"KIPRIS Tool: {name}", time.perf_counter() - start_tool)
+                        
                         content_text = "\n".join([c.text for c in result.content if hasattr(c, 'text')]) if hasattr(result, 'content') else str(result)
                         logger.log_tool_result(name, content_text)
                         tool_parts.append(types.Part.from_function_response(name=name, response={"result": content_text}))
@@ -512,11 +532,13 @@ async def main(prompt, script):
             
             if tool_parts:
                 history.append(types.Content(role="tool", parts=tool_parts))
+                start_api = time.perf_counter()
                 current_response = client.models.generate_content(
                     model="gemini-3-flash-preview",
                     contents=history,
                     config=config
                 )
+                profiler.log_manual(f"Gemini API: Turn {turn_count+1}", time.perf_counter() - start_api)
                 
                 if current_response.usage_metadata:
                     total_usage.prompt_token_count += current_response.usage_metadata.prompt_token_count

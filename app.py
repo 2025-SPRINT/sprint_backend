@@ -1,8 +1,16 @@
 from flask import Flask, jsonify
+from utils.profiler import trace, profiler
 
 app = Flask(__name__)
 
+@app.after_request
+def after_each_request(response):
+    profiler.print_summary()
+    return response
+
+
 @app.route('/')
+@trace("Route: Home")
 def home():
     return jsonify({
         "status": "success",
@@ -42,6 +50,7 @@ def make_json_safe(obj):
 # 2. [현석] AI 분석 전용 라우트 (분리된 Step 3)
 # ==========================================
 @app.route('/analyze/npr', methods=['POST'])
+@trace("Route: Analyze NPR (Deepfake)")
 def analyze_npr():
     data = request.get_json(silent=True) or {}
     video_path = data.get("video_path")
@@ -101,6 +110,9 @@ def analyze_npr():
             img_crop_bgr = cv2.cvtColor(img_crop_rgb, cv2.COLOR_RGB2BGR)
 
             # 모델 예측
+            # [아이디어 전달] NPR 모델은 업샘플링 아티팩트(고주파 노이즈) 추적이 핵심입니다.
+            # 현재처럼 이미지를 224로 리사이즈(축소)하면 보간법 때문에 이 흔적이 뭉개져 성능이 떨어질 수 있습니다.
+            # 개선안: 리사이즈 대신 원본 해상도에서 중요한 영역(중앙 등)을 224x224 패치로 '절삭'하여 입력하는 것이 정확도가 더 높을 것입니다.
             score = float(npr_detector.predict_image(img_crop_bgr))
             is_fake = score > threshold
 
@@ -147,6 +159,7 @@ def analyze_npr():
 # 3. [순호+통합] 데이터 추출 엔드포인트
 # ==========================================
 @app.route('/extract', methods=['POST'])
+@trace("Route: Extract Video Data")
 def extract_video_data():
     data = request.get_json(silent=True)
     if not data or not data.get('url'):
@@ -326,6 +339,7 @@ from gemini_main import main as gemini_analyze, PROMPT_1
 import asyncio, os
 
 @app.route('/analyze', methods=['POST'])
+@trace("Route: Analyze script (Gemini)")
 def analyze():
     data = request.get_json()
     if not data or 'script' not in data:
@@ -369,6 +383,7 @@ from youtube_transcript_api.formatters import TextFormatter
 from gemini_main import main as gemini_analyze, PROMPT_1
 
 @app.route('/analyze-youtube', methods=['POST'])
+@trace("Route: Analyze YouTube (Full Flow)")
 def analyze_youtube():
     """
     유튜브 URL을 입력받아 자막 추출 후 Gemini 분석 리포트를 반환
@@ -426,6 +441,10 @@ def analyze_youtube():
             "message": f"Gemini 분석 중 오류 발생: {str(e)}"
         }), 500
 
+
+############## 건드리지 말 것 ##############
+
 if __name__ == '__main__':
-    # print(get_youtube_transcript2())
     app.run(debug=True, host='0.0.0.0', port=8080)
+
+########################################
