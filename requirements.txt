@@ -131,3 +131,5 @@ youtube-transcript-api==1.2.3
 zstandard==0.25.0
 yt-dlp
 google-api-python-client
+imageio-ffmpeg==0.6.0
+imageio==2.37.2

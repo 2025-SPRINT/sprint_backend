@@ -43,75 +43,101 @@ def make_json_safe(obj):
 # ==========================================
 @app.route('/analyze/npr', methods=['POST'])
 def analyze_npr():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     video_path = data.get("video_path")
-    
+
     if not video_path or not os.path.exists(video_path):
         return jsonify({"status": "error", "message": "파일을 찾을 수 없습니다."}), 400
 
     try:
-        cap = cv2.VideoCapture(video_path)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fake_frame_count = 0
-        analyzed_count = 0
+        interval = int(data.get("interval", 5))         # N프레임마다 분석
+        threshold = float(data.get("threshold", 0.5))    # fake 기준
 
-        print(f"분석 시작: {video_path} (총 {total_frames} 프레임)")
+        print(f"분석 시작(이미지 Center Crop 기반): {video_path}")
 
-        # 프레임 저장 폴더
+        # 저장 폴더 설정
         base_dir = os.path.dirname(video_path)
         ai_dir = os.path.join(base_dir, "frames_ai")
         real_dir = os.path.join(base_dir, "frames_real")
+        # 수정 제안: 변수명과 폴더명을 더 직관적으로 변경
+        ai_crop_dir = os.path.join(base_dir, "crops_ai")    # faces_ai -> crops_ai
+        real_crop_dir = os.path.join(base_dir, "crops_real") # faces_real -> crops_real
 
-        os.makedirs(ai_dir, exist_ok=True)
-        os.makedirs(real_dir, exist_ok=True)
+        for d in [ai_dir, real_dir, ai_crop_dir, real_crop_dir]:
+            os.makedirs(d, exist_ok=True)
 
+        fake_frame_count = 0 
+        analyzed_frames = 0 
+        score_log = []
 
-        for i in range(0, total_frames, 10):
-            cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-            success, frame = cap.read()
-            if not success:
-                break
+        # 코덱 및 환경 호환성을 위해 imageio 사용
+        reader = imageio.get_reader(video_path)
 
-            analyzed_count += 1
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            face_results = face_detection.process(frame_rgb)
+        # --- 유틸리티: 중앙 크롭 함수 ---
+        def center_crop(img, target_size=(224, 224)):
+            h, w, _ = img.shape
+            min_dim = min(h, w)
+            start_x = (w - min_dim) // 2
+            start_y = (h - min_dim) // 2
+            
+            # 중앙 정사각형 추출 후 모델 입력 사이즈로 리사이즈
+            crop = img[start_y:start_y+min_dim, start_x:start_x+min_dim]
+            return cv2.resize(crop, target_size, interpolation=cv2.INTER_AREA)
+        # -----------------------------
 
-            score = 0
-            if face_results.detections:
-                det = face_results.detections[0]
-                bbox = det.location_data.relative_bounding_box
-                ih, iw, _ = frame.shape
-                x = int(bbox.xmin * iw)
-                y = int(bbox.ymin * ih)
-                w = int(bbox.width * iw)
-                h = int(bbox.height * ih)
-                face_img = frame[max(0, y):y+h, max(0, x):x+w]
+        for i, frame in enumerate(reader):
+            if i % interval != 0:
+                continue
 
-                if face_img.size > 0:
-                    score = npr_detector.predict_image(face_img)
+            if frame is None:
+                continue
+
+            # 분석 카운트 증가 (얼굴 검출 단계 없이 바로 분석)
+            analyzed_frames += 1
+
+            # 이미지 전처리 (RGB -> BGR 및 중앙 크롭)
+            # 모델이 요구하는 특정 사이즈가 있다면 target_size를 수정하세요.
+            img_crop_rgb = center_crop(frame, target_size=(224, 224))
+            img_crop_bgr = cv2.cvtColor(img_crop_rgb, cv2.COLOR_RGB2BGR)
+
+            # 모델 예측
+            score = float(npr_detector.predict_image(img_crop_bgr))
+            is_fake = score > threshold
+
+            score_log.append({
+                "frame_index": i,
+                "score": round(score, 6)
+            })
+
+            frame_name = f"frame_{i:06d}.jpg"
+            crop_name = f"crop_{i:06d}.jpg"
+
+            # 원본 프레임 및 크롭 이미지 저장
+            frame_bgr_to_save = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            if is_fake:
+                fake_frame_count += 1
+                cv2.imwrite(os.path.join(ai_dir, frame_name), frame_bgr_to_save)
+                cv2.imwrite(os.path.join(ai_crop_dir, crop_name), img_crop_bgr)
             else:
-                score = npr_detector.predict_image(frame)
+                cv2.imwrite(os.path.join(real_dir, frame_name), frame_bgr_to_save)
+                cv2.imwrite(os.path.join(real_crop_dir, crop_name), img_crop_bgr)
 
-        frame_name = f"frame_{i:06d}.jpg"
+        reader.close()
 
-        if score > 0.5:
-            fake_frame_count += 1
-            cv2.imwrite(os.path.join(ai_dir, frame_name), frame)
-        else:
-            cv2.imwrite(os.path.join(real_dir, frame_name), frame)
-        
-        cap.release()
-        ai_rate = (fake_frame_count / analyzed_count) * 100 if analyzed_count > 0 else 0
-        
-        analysis_results = {
+        # 스코어 로그 저장
+        score_log_path = os.path.join(base_dir, "score_log.json")
+        with open(score_log_path, "w", encoding="utf-8") as f:
+            json.dump(score_log, f, indent=2, ensure_ascii=False)
+
+        # 결과 계산
+        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
+
+        # 요청하신 3개 키값만 반환
+        return jsonify({
             "ai_detected_frames": fake_frame_count,
             "ai_generation_rate": f"{round(ai_rate, 2)}%",
-            "analyzed_frames": analyzed_count
-        }
-
-        return jsonify({
-            "status": "success",
-            "analysis_results": analysis_results
+            "analyzed_frames": analyzed_frames
         })
 
     except Exception as e:
@@ -161,12 +187,14 @@ def extract_video_data():
             # Flask 내부 test_client를 사용하여 다른 라우트 호출
             with app.test_client() as client:
                 npr_response = client.post('/analyze/npr', json={"video_path": video_path})
-                npr_data = npr_response.get_json() or {}
-                
-                if npr_data.get("status") == "success":
-                    npr_analysis = npr_data.get("analysis_results", {})
-                else:
-                    npr_analysis = {"error": "AI 분석 라우트 호출 실패", "detail": npr_data}
+            npr_data = npr_response.get_json() or {}
+
+            # ✅ analyze_npr가 이제 3개 필드만 반환하므로, 그 3개가 있으면 성공으로 간주
+            required = ("ai_detected_frames", "ai_generation_rate", "analyzed_frames")
+            if all(k in npr_data for k in required):
+                npr_analysis = npr_data
+            else:
+                npr_analysis = {"error": "AI 분석 라우트 호출 실패", "detail": npr_data}
         else:
             npr_analysis = {"message": "영상 파일을 찾을 수 없어 분석을 건너뛰었습니다."}
 
