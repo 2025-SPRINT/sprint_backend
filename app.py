@@ -1,7 +1,9 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 from utils.profiler import trace, profiler
 
 app = Flask(__name__)
+CORS(app) # 모든 origin에 대해 CORS 허용
 
 @app.after_request
 def after_each_request(response):
