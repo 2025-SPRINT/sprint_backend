@@ -49,9 +49,19 @@ def collect_and_split_data(api_key, url, video_id):
     # --- [2] yt-dlp 영상 다운로드 및 썸네일 (AI 분석 필수용) ---
     start_ytdlp = time.perf_counter()
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'format': 'bv*+ba/best',
         'outtmpl': os.path.join(target_dir, "video.%(ext)s"),
         'merge_output_format': 'mp4',
+        'postprocessors': [
+            {
+             'key': 'FFmpegVideoConvertor',
+             'preferedformat': 'mp4',
+            }
+      ],
+      'postprocessor_args': [
+        '-c:v', 'libx264',
+        '-c:a', 'aac'
+      ],
         'writethumbnail': True,
         'quiet': True,
         'noplaylist': True,
