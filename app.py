@@ -18,238 +18,151 @@ def home():
         "status": "success",
         "message": "Hello, World! Flask server is running."
     })
-###############영상 다운->AI 분석->통합추출###############
-from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
-import cv2
-import mediapipe as mp
+# ========================================
+from flask import Flask, jsonify, request
 import os
 import json
-from flask import Flask, jsonify, request
-from models.npr_model.npr_wrapper import NPRDetector
+import cv2
 import imageio
+from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
+from models.npr_model.npr_wrapper import NPRDetector
 
 # ==========================================
 # 1. 전역 설정 및 모델 로드
 # ==========================================
 npr_detector = NPRDetector(model_filename="NPR.pth")
-mp_face_detection = mp.solutions.face_detection
-face_detection = mp_face_detection.FaceDetection(
-    model_selection=1,    
-    min_detection_confidence=0.5
-)
 
-def make_json_safe(obj):
-    """JSON 저장 시 에러 방지를 위한 변환 함수"""
-    if isinstance(obj, dict):
-        return {str(k): make_json_safe(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple, set)):
-        return [make_json_safe(v) for v in obj]
-    if isinstance(obj, (str, int, float, bool)) or obj is None:
-        return obj
-    return str(obj)
+def get_safe_metadata(result):
+    """result가 경로(str)면 파일을 읽고, 사전(dict)이면 그대로 반환"""
+    if isinstance(result, str):
+        json_path = os.path.join(result, "data_api_origin.json")
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                return json.load(f), result
+        return {}, result
+    return result, result.get("storage_path")
+
+# --- 유틸리티: 중앙 크롭 함수 (본질 유지) ---
+def center_crop(img, target_size=(224, 224)):
+    h, w, _ = img.shape
+    min_dim = min(h, w)
+    start_x = (w - min_dim) // 2
+    start_y = (h - min_dim) // 2
+    crop = img[start_y:start_y+min_dim, start_x:start_x+min_dim]
+    return cv2.resize(crop, target_size, interpolation=cv2.INTER_AREA)
 
 # ==========================================
-# 2. [현석] AI 분석 전용 라우트 (분리된 Step 3)
+# 2. [순호] 기본 영상 정보 조회 (Fast)
 # ==========================================
-@app.route('/analyze/npr', methods=['POST'])
-@trace("Route: Analyze NPR (Deepfake)")
-def analyze_npr():
+@app.route('/api/video/info', methods=['POST'])
+@trace("Route: Get video info")
+def get_video_info():
     data = request.get_json(silent=True) or {}
-    video_path = data.get("video_path")
-
-    if not video_path or not os.path.exists(video_path):
-        return jsonify({"status": "error", "message": "파일을 찾을 수 없습니다."}), 400
+    url = data.get("url")
+    if not url: return jsonify({"status": "error", "message": "URL 필요"}), 400
 
     try:
-        interval = int(data.get("interval", 5))         # N프레임마다 분석
-        threshold = float(data.get("threshold", 0.5))    # fake 기준
+        # 1. 변수 정의 (NameError 해결 포인트)
+        api_key = get_or_save_api_key() # 변수명을 명확히 할당
+        v_id = get_video_id(url)
+        
+        # 2. 영상 다운로드(yt-dlp) 없이 메타데이터만 호출 (속도 개선)
+        from yt_shorts import get_metadata_only # 새로 만든 함수 임포트
+        item = get_metadata_only(api_key, v_id)
+        
+        if not item:
+            return jsonify({"status": "error", "message": "영상을 찾을 수 없습니다."}), 404
 
-        print(f"분석 시작(이미지 Center Crop 기반): {video_path}")
+        snippet = item.get('snippet', {})
+        stats = item.get('statistics', {})
 
-        # 저장 폴더 설정
-        base_dir = os.path.dirname(video_path)
-        ai_dir = os.path.join(base_dir, "frames_ai")
-        real_dir = os.path.join(base_dir, "frames_real")
-        # 수정 제안: 변수명과 폴더명을 더 직관적으로 변경
-        ai_crop_dir = os.path.join(base_dir, "crops_ai")    # faces_ai -> crops_ai
-        real_crop_dir = os.path.join(base_dir, "crops_real") # faces_real -> crops_real
-
-        for d in [ai_dir, real_dir, ai_crop_dir, real_crop_dir]:
-            os.makedirs(d, exist_ok=True)
-
-        fake_frame_count = 0 
-        analyzed_frames = 0 
-        score_log = []
-
-        # 코덱 및 환경 호환성을 위해 imageio 사용
-        reader = imageio.get_reader(video_path)
-
-        # --- 유틸리티: 중앙 크롭 함수 ---
-        def center_crop(img, target_size=(224, 224)):
-            h, w, _ = img.shape
-            min_dim = min(h, w)
-            start_x = (w - min_dim) // 2
-            start_y = (h - min_dim) // 2
-            
-            # 중앙 정사각형 추출 후 모델 입력 사이즈로 리사이즈
-            crop = img[start_y:start_y+min_dim, start_x:start_x+min_dim]
-            return cv2.resize(crop, target_size, interpolation=cv2.INTER_AREA)
-        # -----------------------------
-
-        for i, frame in enumerate(reader):
-            if i % interval != 0:
-                continue
-
-            if frame is None:
-                continue
-
-            # 분석 카운트 증가 (얼굴 검출 단계 없이 바로 분석)
-            analyzed_frames += 1
-
-            # 이미지 전처리 (RGB -> BGR 및 중앙 크롭)
-            # 모델이 요구하는 특정 사이즈가 있다면 target_size를 수정하세요.
-            img_crop_rgb = center_crop(frame, target_size=(224, 224))
-            img_crop_bgr = cv2.cvtColor(img_crop_rgb, cv2.COLOR_RGB2BGR)
-
-            # 모델 예측
-            # [아이디어 전달] NPR 모델은 업샘플링 아티팩트(고주파 노이즈) 추적이 핵심입니다.
-            # 현재처럼 이미지를 224로 리사이즈(축소)하면 보간법 때문에 이 흔적이 뭉개져 성능이 떨어질 수 있습니다.
-            # 개선안: 리사이즈 대신 원본 해상도에서 중요한 영역(중앙 등)을 224x224 패치로 '절삭'하여 입력하는 것이 정확도가 더 높을 것입니다.
-            score = float(npr_detector.predict_image(img_crop_bgr))
-            is_fake = score > threshold
-
-            score_log.append({
-                "frame_index": i,
-                "score": round(score, 6)
-            })
-
-            frame_name = f"frame_{i:06d}.jpg"
-            crop_name = f"crop_{i:06d}.jpg"
-
-            # 원본 프레임 및 크롭 이미지 저장
-            frame_bgr_to_save = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-            if is_fake:
-                fake_frame_count += 1
-                cv2.imwrite(os.path.join(ai_dir, frame_name), frame_bgr_to_save)
-                cv2.imwrite(os.path.join(ai_crop_dir, crop_name), img_crop_bgr)
-            else:
-                cv2.imwrite(os.path.join(real_dir, frame_name), frame_bgr_to_save)
-                cv2.imwrite(os.path.join(real_crop_dir, crop_name), img_crop_bgr)
-
-        reader.close()
-
-        # 스코어 로그 저장
-        score_log_path = os.path.join(base_dir, "score_log.json")
-        with open(score_log_path, "w", encoding="utf-8") as f:
-            json.dump(score_log, f, indent=2, ensure_ascii=False)
-
-        # 결과 계산
-        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
-
-        # 요청하신 3개 키값만 반환
+        # 3. 이상적인 명세서(Ideal Spec) 규격에 맞춘 응답 구성 
         return jsonify({
-            "ai_detected_frames": fake_frame_count,
-            "ai_generation_rate": f"{round(ai_rate, 2)}%",
-            "analyzed_frames": analyzed_frames
+            "status": "success",
+            "data": {
+                "video_id": v_id, 
+                "title": snippet.get("title"),
+                "channel_name": snippet.get("channelTitle"), 
+                "published_at": snippet.get("publishedAt"), 
+                "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url"), 
+                "view_count": stats.get("viewCount") 
+            }
         })
-
     except Exception as e:
+        # 에러 메시지를 구체적으로 확인하기 위해 e 출력
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
-# 3. [순호+통합] 데이터 추출 엔드포인트
+# 3. 딥페이크 탐지
 # ==========================================
-@app.route('/extract', methods=['POST'])
-@trace("Route: Extract Video Data")
-def extract_video_data():
-    data = request.get_json(silent=True)
-    if not data or not data.get('url'):
-        return jsonify({"status": "error", "message": "요청 바디에 'url'이 없습니다."}), 400
+@app.route('/api/video/detect', methods=['POST'])
+@trace("Route: Analyze NPR (Deepfake)")
+def detect_deepfake():
+    """실제 영상을 다운로드하고 NPR 모델로 분석하여 AI생성률 반환"""
+    data = request.get_json(silent=True) or {}
+    url = data.get("url")
+    interval = int(data.get("interval", 5))
+    threshold = float(data.get("threshold", 0.5))
 
-    url = data.get('url')
-    api_key = get_or_save_api_key()
-    v_id = get_video_id(url)
-
-    if not v_id:
-        return jsonify({"status": "error", "message": "유효하지 않은 URL입니다."}), 400
+    if not url:
+        return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
     try:
-        # --- [STEP 1] 데이터 수집 및 영상 다운로드 ---
-        result = collect_and_split_data(api_key, url, v_id)
-        print("DEBUG result:", result)
-
-        if isinstance(result, str):
-            storage_path = result
-        elif isinstance(result, dict):
-            storage_path = result.get("storage_path")
-        else:
-            raise TypeError(f"결과 타입 이상: {type(result)}")
-
-        # --- [STEP 2] 영상 경로 확보 ---
+        print("\n" + "="*50)
+        print("🚀 영상 추출 시작") 
+        # [STEP 1] 영상 추출 (기존 본질 유지)
+        v_id = get_video_id(url)
+        res = collect_and_split_data(get_or_save_api_key(), url, v_id)
+        _, storage_path = get_safe_metadata(res)
+        
         video_path = os.path.join(storage_path, "video.mp4")
+        # 실제 파일 경로 확인 로직
         if not os.path.exists(video_path):
             for f in os.listdir(storage_path):
-                if f.startswith("video") and f.endswith((".mp4", ".webm", ".mkv", ".mov", ".avi")):
+                if f.endswith((".mp4", ".webm")):
                     video_path = os.path.join(storage_path, f)
                     break
-        
         print(f"📍 분석 실행 경로: {video_path}")
 
-        # --- [STEP 3] AI 분석 호출 (내부 라우트 호출 형식) ---
-        npr_analysis = {}
-        if video_path and os.path.exists(video_path):
-            # Flask 내부 test_client를 사용하여 다른 라우트 호출
-            with app.test_client() as client:
-                npr_response = client.post('/analyze/npr', json={"video_path": video_path})
-            npr_data = npr_response.get_json() or {}
-
-            # ✅ analyze_npr가 이제 3개 필드만 반환하므로, 그 3개가 있으면 성공으로 간주
-            required = ("ai_detected_frames", "ai_generation_rate", "analyzed_frames")
-            if all(k in npr_data for k in required):
-                npr_analysis = npr_data
-            else:
-                npr_analysis = {"error": "AI 분석 라우트 호출 실패", "detail": npr_data}
-        else:
-            npr_analysis = {"message": "영상 파일을 찾을 수 없어 분석을 건너뛰었습니다."}
-
-        # --- [STEP 4] 데이터 통합 및 최종 저장 ---
-        api_data = {}
-        api_json_file = os.path.join(storage_path, "data_api_origin.json")
-        if os.path.exists(api_json_file):
-            with open(api_json_file, "r", encoding="utf-8") as f:
-                api_data = json.load(f)
-
-        final_integrated_data = {
-            "video_id": v_id,
-            "storage_path": storage_path,
-            "video_path": video_path,
-            "api_data": api_data,
-            "ai_analysis": npr_analysis,
-            "thumbnail_path": os.path.join(storage_path, "thumbnail.jpg")
-        }
+        # [STEP 2] AI 분석 (NPR 모델 실행)
+        print(f"🔍 분석 시작(이미지 Center Crop 기반): {video_path}")
+        reader = imageio.get_reader(video_path)
+        fake_frame_count = 0
+        analyzed_frames = 0
         
-        final_integrated_data = make_json_safe(final_integrated_data)
+        for i, frame in enumerate(reader):
+            if i % interval != 0: continue
+            
+            analyzed_frames += 1
+            img_crop_rgb = center_crop(frame)
+            img_crop_bgr = cv2.cvtColor(img_crop_rgb, cv2.COLOR_RGB2BGR)
+            
+            score = float(npr_detector.predict_image(img_crop_bgr))
+            if score > threshold:
+                fake_frame_count += 1
+        
+        reader.close()
+        
+        # AI 생성률 계산
+        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
+        print(f"✅ 분석 완료: 생성률 {round(ai_rate, 2)}%")
+        print("="*50 + "\n")
 
-        # 통합 JSON 저장
-        integrated_json_path = os.path.join(storage_path, "data_api_integrated.json")
-        with open(integrated_json_path, 'w', encoding='utf-8') as f:
-            json.dump(final_integrated_data, f, indent=4, ensure_ascii=False, default=str)
-
-        # 원본 JSON에 리포트 추가
-        if os.path.exists(api_json_file):
-            api_data["ai_analysis_report"] = npr_analysis
-            with open(api_json_file, 'w', encoding='utf-8') as f:
-                json.dump(api_data, f, indent=4, ensure_ascii=False, default=str)
-
+      
         return jsonify({
             "status": "success",
-            "message": "수집 및 분석이 모두 완료되었습니다.",
-            "data": final_integrated_data
+            "data": {
+                "video_id": v_id,
+                "detection_result": {
+                    "is_deepfake": ai_rate > 50, # 예시 기준
+                    "confidence_score": f"{round(ai_rate, 2)}%",
+                    "detected_frames": fake_frame_count,
+                    "total_analyzed_frames": analyzed_frames
+                }
+            }
         })
 
     except Exception as e:
-        print(f"❌ 오류 발생: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 ############# 승언 추가 #############

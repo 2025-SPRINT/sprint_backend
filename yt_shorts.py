@@ -115,5 +115,25 @@ def extract_shorts():
     else:
         print("❌ 올바른 유튜브 URL 형식이 아닙니다.")
 
+# yt_shorts.py 파일 하단에 추가
+
+@trace("YouTube Logic: Get Metadata Only")
+def get_metadata_only(api_key, video_id):
+    """
+    영상 다운로드 없이 YouTube Data API만 호출하여 0.5초 내 응답 목표
+    """
+    youtube = build('youtube', 'v3', developerKey=api_key)
+    
+    # 필수 정보(snippet, statistics)만 요청
+    video_raw = youtube.videos().list(
+        part="snippet,statistics", 
+        id=video_id
+    ).execute()
+    
+    if not video_raw.get('items'):
+        return None
+        
+    return video_raw['items'][0]
+
 if __name__ == "__main__":
     extract_shorts()
