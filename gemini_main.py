@@ -7,7 +7,7 @@ from google.genai import types
 from typing import Literal, List, Optional
 from typing_extensions import TypedDict
 from dotenv import load_dotenv
-from mcp_connector import get_kipris_connector
+from mcp_connector import get_singleton_connector
 from utils.profiler import trace, profiler
 import time
 
@@ -431,9 +431,8 @@ async def main(prompt, script):
     api_key = os.getenv("API_KEY")
     client = genai.Client(api_key=api_key)
 
-    # 1. Start KIPRIS MCP Connector
-    connector = await get_kipris_connector()
-    kipris_tools = await connector.get_gemini_tools()
+    # 1. Start KIPRIS MCP Connector (싱글톤 사용으로 재사용)
+    connector, kipris_tools = await get_singleton_connector()
 
 
     # 2. Add Google Search grounding tool

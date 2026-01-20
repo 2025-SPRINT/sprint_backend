@@ -106,3 +106,30 @@ async def get_kipris_connector(use_mock=False):
     )
     
     return MCPKVConnector(server_params)
+
+# =====================================================
+# 싱글톤 패턴: 서버 시작 시 한 번만 초기화
+# =====================================================
+_kipris_connector_instance = None
+_kipris_tools_cache = None
+
+async def _init_singleton():
+    """내부용: 싱글톤 커넥터를 초기화합니다."""
+    global _kipris_connector_instance, _kipris_tools_cache
+    if _kipris_connector_instance is None:
+        print("🚀 [MCP] KIPRIS 커넥터 싱글톤 초기화 중...")
+        _kipris_connector_instance = await get_kipris_connector()
+        _kipris_tools_cache = await _kipris_connector_instance.get_gemini_tools()
+        print("✅ [MCP] KIPRIS 커넥터 준비 완료!")
+    return _kipris_connector_instance, _kipris_tools_cache
+
+def init_kipris_sync():
+    """Flask 앱 시작 시 호출하여 MCP 커넥터를 미리 초기화합니다."""
+    asyncio.run(_init_singleton())
+
+async def get_singleton_connector():
+    """이미 초기화된 싱글톤 커넥터와 도구 목록을 반환합니다."""
+    global _kipris_connector_instance, _kipris_tools_cache
+    if _kipris_connector_instance is None:
+        await _init_singleton()
+    return _kipris_connector_instance, _kipris_tools_cache
