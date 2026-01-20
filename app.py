@@ -360,11 +360,7 @@ def analyze_youtube():
 ############## 건드리지 말 것 ##############
 
 if __name__ == '__main__':
-    # MCP KIPRIS 커넥터를 서버 시작 시 미리 초기화 (요청 시 지연 제거)
-    from mcp_connector import init_kipris_sync
-    print("🔧 Flask 서버 시작 전 MCP 커넥터 초기화...")
-    init_kipris_sync()
-    
+    # 참고: MCP 커넥터는 첫 요청 시 Lazy 초기화됩니다 (이벤트 루프 충돌 방지)
     app.run(debug=True, host='0.0.0.0', port=8080)
 
 ########################################
