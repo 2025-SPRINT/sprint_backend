@@ -297,35 +297,39 @@ from youtube_transcript_api.formatters import TextFormatter
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
 from gemini_main import main as gemini_analyze, PROMPT_1
 
-@app.route('/analyze-youtube', methods=['POST'])
-@trace("Route: Analyze YouTube (Full Flow)")
-def analyze_youtube():
+@app.route('/api/video/analyze', methods=['POST'])
+@trace("Route: Analyze YouTube (Script-based Analysis)")
+def analyze_video():
     """
-    유튜브 URL을 입력받아 자막 추출 후 Gemini 분석 리포트를 반환
+    유튜브 URL을 입력받아 자막 추출 후 Gemini 분석 결과를 반환
+    API 명세: POST /api/video/analyze
     """
     data = request.get_json()
-    if not data or 'video_url' not in data:
+    if not data or 'url' not in data:
         return jsonify({
             "status": "error",
-            "message": "Missing 'video_url' in request body"
+            "message": "Missing 'url' in request body"
         }), 400
 
-    video_url = data.get('video_url')
-    languages = data.get('languages', ['ko', 'en']) # 기본 언어 설정
+    video_url = data.get('url')
     custom_prompt = data.get('prompt', PROMPT_1)    # 사용자 정의 프롬프트 혹은 기본값
     
     # 1. YouTube Video ID 추출
     try:
-        video_id = video_url.split("v=")[-1].split("&")[0]
+        video_id = get_video_id(video_url)
+        if not video_id:
+            video_id = video_url.split("v=")[-1].split("&")[0]
     except Exception:
         return jsonify({"status": "error", "message": "Invalid YouTube URL format"}), 400
 
     # 2. 자막 추출 (YouTubeTranscriptApi)
     try:
         script_text = get_youtube_transcript2(video_url)
-        print('#' * 80)
-        print(script_text)
-        print('#' * 80)
+        if not script_text:
+            return jsonify({
+                "status": "error",
+                "message": "자막을 찾을 수 없습니다."
+            }), 404
 
     except Exception as e:
         return jsonify({
@@ -340,14 +344,16 @@ def analyze_youtube():
         
         # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
         try:
-            report_data = json.loads(report)
+            analysis_result = json.loads(report)
         except (TypeError, json.JSONDecodeError):
-            report_data = report
+            analysis_result = report
 
         return jsonify({
             "status": "success",
-            "video_id": video_id,
-            "report": report_data
+            "data": {
+                "video_id": video_id,
+                "analysis_result": analysis_result
+            }
         })
 
     except Exception as e:
