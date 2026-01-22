@@ -31,7 +31,7 @@ from models.npr_model.npr_wrapper import NPRDetector
 # ==========================================
 # 1. 전역 설정 및 모델 로드
 # ==========================================
-npr_detector = NPRDetector(model_filename="NPR.pth")
+npr_detector = NPRDetector(model_filename="model_epoch_last_3090.pth")
 
 def get_safe_metadata(result):
     """result가 경로(str)면 파일을 읽고, 사전(dict)이면 그대로 반환"""
@@ -42,15 +42,6 @@ def get_safe_metadata(result):
                 return json.load(f), result
         return {}, result
     return result, result.get("storage_path")
-
-# --- 유틸리티: 중앙 크롭 함수 (본질 유지) ---
-def center_crop(img, target_size=(224, 224)):
-    h, w, _ = img.shape
-    min_dim = min(h, w)
-    start_x = (w - min_dim) // 2
-    start_y = (h - min_dim) // 2
-    crop = img[start_y:start_y+min_dim, start_x:start_x+min_dim]
-    return cv2.resize(crop, target_size, interpolation=cv2.INTER_AREA)
 
 # ==========================================
 # 2. [순호] 기본 영상 정보 조회 (Fast)
@@ -96,66 +87,90 @@ def get_video_info():
 # ==========================================
 # 3. 딥페이크 탐지
 # ==========================================
+# ==========================================
+# 3. 딥페이크 탐지 (NPR 원본 로직 적용 + 기존 응답 구조 유지)
+# ==========================================
 @app.route('/api/video/detect', methods=['POST'])
 @trace("Route: Analyze NPR (Deepfake)")
 def detect_deepfake():
-    """실제 영상을 다운로드하고 NPR 모델로 분석하여 AI생성률 반환"""
+    """
+    NPR-CVPR2024 원본 추론 로직을 사용함
+    """
     data = request.get_json(silent=True) or {}
     url = data.get("url")
-    interval = int(data.get("interval", 5))
+    interval = int(data.get("interval", 20))
     threshold = float(data.get("threshold", 0.5))
 
     if not url:
         return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
     try:
-        print("\n" + "="*50)
-        print("🚀 영상 추출 시작") 
-        # [STEP 1] 영상 추출 (기존 본질 유지)
+        print(f"\n🚀 영상 분석 시작 (NPR 원본 로직)") 
+        
+        # [STEP 1] 영상 추출 및 파일 경로 획득
         v_id = get_video_id(url)
         res = collect_and_split_data(get_or_save_api_key(), url, v_id)
         _, storage_path = get_safe_metadata(res)
         
         video_path = os.path.join(storage_path, "video.mp4")
-        # 실제 파일 경로 확인 로직
         if not os.path.exists(video_path):
             for f in os.listdir(storage_path):
                 if f.endswith((".mp4", ".webm")):
                     video_path = os.path.join(storage_path, f)
                     break
-        print(f"📍 분석 실행 경로: {video_path}")
-
-        # [STEP 2] AI 분석 (NPR 모델 실행)
-        print(f"🔍 분석 시작(이미지 Center Crop 기반): {video_path}")
-        reader = imageio.get_reader(video_path)
+        
+        # [STEP 2] NPR 모델 분석 실행 (안전/견고 버전)
+        cap = cv2.VideoCapture(video_path)
         fake_frame_count = 0
         analyzed_frames = 0
+        frame_idx = 0
+
+        try:
+            if not cap.isOpened():
+                raise RuntimeError(f"비디오를 열 수 없음: {video_path}")
+
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+            # 코덱 불안정으로 인한 빈 프레임 방어
+                if frame is None or frame.size == 0:
+                    frame_idx += 1
+                    continue
+
+            # Interval마다 분석 및 저장 수행
+                if frame_idx % interval == 0:
+                # [이미지 저장]
+                # [NPR 분석]
+                    try:
+                        score = float(npr_detector.predict_image(frame))
+                        if score > threshold:
+                            fake_frame_count += 1
+                        analyzed_frames += 1
+                    except Exception as e:
+                        print(f"[WARN] {frame_idx}번 프레임 분석 중 모델 에러: {e}")
+                frame_idx += 1
+
+        finally:
+            cap.release()
+
+    # 결과 검증
+        if analyzed_frames == 0:
+            raise RuntimeError("분석/저장된 프레임이 없습니다. 파일이나 설정을 확인하세요.")
+
         
-        for i, frame in enumerate(reader):
-            if i % interval != 0: continue
-            
-            analyzed_frames += 1
-            img_crop_rgb = center_crop(frame)
-            img_crop_bgr = cv2.cvtColor(img_crop_rgb, cv2.COLOR_RGB2BGR)
-            
-            score = float(npr_detector.predict_image(img_crop_bgr))
-            if score > threshold:
-                fake_frame_count += 1
-        
-        reader.close()
-        
-        # AI 생성률 계산
+        # [STEP 3] AI 생성률(ai_rate) 계산
         ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
         print(f"✅ 분석 완료: 생성률 {round(ai_rate, 2)}%")
-        print("="*50 + "\n")
 
-      
+        # [STEP 4] 기존 응답 형식 그대로 반환
         return jsonify({
             "status": "success",
             "data": {
                 "video_id": v_id,
                 "detection_result": {
-                    "is_deepfake": ai_rate > 50, # 예시 기준
+                    "is_deepfake": ai_rate > 50, # 기존 예시 기준 유지
                     "confidence_score": f"{round(ai_rate, 2)}%",
                     "detected_frames": fake_frame_count,
                     "total_analyzed_frames": analyzed_frames
@@ -164,6 +179,8 @@ def detect_deepfake():
         })
 
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
 ############# 승언 추가 #############
