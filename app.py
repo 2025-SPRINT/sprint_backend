@@ -385,6 +385,6 @@ def analyze_video():
 
 if __name__ == '__main__':
     # 참고: MCP 커넥터는 첫 요청 시 Lazy 초기화됩니다 (이벤트 루프 충돌 방지)
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=5173)
 
 ########################################

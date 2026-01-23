@@ -28,6 +28,11 @@ seed_torch(100)
 class NPRDetector:
     def __init__(self, model_filename="model_epoch_last_3090.pth"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        if torch.cuda.is_available():
+            print(f"✅ Using GPU for NPR model inference")
+        else:
+            print(f"⚠️ Using CPU for NPR model inference")
         
         # 2. 모델 구조 정의 (Layer 3, 4 제거)
         self.model = resnet50()
