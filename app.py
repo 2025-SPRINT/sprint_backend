@@ -94,7 +94,8 @@ def get_video_info():
 @trace("Route: Analyze NPR (Deepfake)")
 def detect_deepfake():
     """
-    NPR-CVPR2024 원본 추론 로직을 사용함
+    NPR-CVPR2024 원본 추론 로직을 사용하여 
+    Real 및 Fake 프레임의 평균 점수를 계산합니다.
     """
     data = request.get_json(silent=True) or {}
     url = data.get("url")
@@ -105,9 +106,8 @@ def detect_deepfake():
         return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
     try:
-        print(f"\n🚀 영상 분석 시작 (NPR 원본 로직)") 
+        print(f"\n🚀 영상 분석 시작 (점수 평균 계산 모드)") 
         
-        # [STEP 1] 영상 추출 및 파일 경로 획득
         v_id = get_video_id(url)
         res = collect_and_split_data(get_or_save_api_key(), url, v_id)
         _, storage_path = get_safe_metadata(res)
@@ -119,9 +119,11 @@ def detect_deepfake():
                     video_path = os.path.join(storage_path, f)
                     break
         
-        # [STEP 2] NPR 모델 분석 실행 (안전/견고 버전)
         cap = cv2.VideoCapture(video_path)
-        fake_frame_count = 0
+        
+        # 점수 계산을 위한 변수 초기화
+        fake_scores = []
+        real_scores = []
         analyzed_frames = 0
         frame_idx = 0
 
@@ -134,19 +136,22 @@ def detect_deepfake():
                 if not ret:
                     break
 
-            # 코덱 불안정으로 인한 빈 프레임 방어
                 if frame is None or frame.size == 0:
                     frame_idx += 1
                     continue
 
-            # Interval마다 분석 및 저장 수행
+                # Interval마다 분석 수행
                 if frame_idx % interval == 0:
-                # [이미지 저장]
-                # [NPR 분석]
                     try:
+                        # npr_detector로부터 0~1 사이의 score 획득
                         score = float(npr_detector.predict_image(frame))
+                        
+                        # threshold 기준으로 Real/Fake 분리하여 리스트에 저장
                         if score > threshold:
-                            fake_frame_count += 1
+                            fake_scores.append(score)
+                        else:
+                            real_scores.append(score)
+                            
                         analyzed_frames += 1
                     except Exception as e:
                         print(f"[WARN] {frame_idx}번 프레임 분석 중 모델 에러: {e}")
@@ -155,24 +160,25 @@ def detect_deepfake():
         finally:
             cap.release()
 
-    # 결과 검증
         if analyzed_frames == 0:
-            raise RuntimeError("분석/저장된 프레임이 없습니다. 파일이나 설정을 확인하세요.")
+            raise RuntimeError("분석된 프레임이 없습니다.")
 
-        
-        # [STEP 3] AI 생성률(ai_rate) 계산
-        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
-        print(f"✅ 분석 완료: 생성률 {round(ai_rate, 2)}%")
+        # [평균 점수 계산]
+        # 리스트가 비어있을 경우(0)를 대비해 처리
+        avg_fake_score = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
+        avg_real_score = sum(real_scores) / len(real_scores) if real_scores else 0.0
 
-        # [STEP 4] 기존 응답 형식 그대로 반환
+        print(f"✅ 분석 완료: Fake 평균 {round(avg_fake_score, 4)}, Real 평균 {round(avg_real_score, 4)}")
+
         return jsonify({
             "status": "success",
             "data": {
                 "video_id": v_id,
                 "detection_result": {
-                    "is_deepfake": ai_rate > 50, # 기존 예시 기준 유지
-                    "confidence_score": f"{round(ai_rate, 2)}%",
-                    "detected_frames": fake_frame_count,
+                    "avg_fake_score": round(avg_fake_score, 4),  # Fake로 판정된 프레임들의 평균 점수
+                    "avg_real_score": round(avg_real_score, 4),  # Real로 판정된 프레임들의 평균 점수
+                    "fake_frame_count": len(fake_scores),
+                    "real_frame_count": len(real_scores),
                     "total_analyzed_frames": analyzed_frames
                 }
             }
