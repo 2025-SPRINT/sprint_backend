@@ -355,12 +355,24 @@ def analyze_video():
             "message": f"자막을 가져오는데 실패했습니다: {str(e)}"
         }), 500
 
-    # 3. Gemini 분석 (async 함수 호출)
+    # 3. AI 분석 (Gemini vs Ollama)
+    provider = data.get('provider', 'gemini') # gemini or ollama
+    
     try:
-        # asyncio.run을 사용하여 비동기 분석 함수 실행
-        report = asyncio.run(gemini_analyze(custom_prompt, script_text))
+        report = ""
+        analysis_result = {}
+
+        if provider == 'ollama':
+            # Ollama 분석 (import needs to be lazy or top-level, adding import here for safety/clarity)
+            from ollama_main import main as ollama_analyze
+            print(f"🚀 Ollama 분석 시작")
+            report = asyncio.run(ollama_analyze(custom_prompt, script_text))
+        else:
+            # Gemini 분석
+            print(f"🚀 Gemini 분석 시작")
+            report = asyncio.run(gemini_analyze(custom_prompt, script_text))
         
-        # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
+        # 결과 파싱 (공통 로직)
         try:
             analysis_result = json.loads(report)
         except (TypeError, json.JSONDecodeError):
@@ -370,6 +382,7 @@ def analyze_video():
             "status": "success",
             "data": {
                 "video_id": video_id,
+                "provider": provider,
                 "analysis_result": analysis_result
             }
         })
@@ -377,7 +390,7 @@ def analyze_video():
     except Exception as e:
         return jsonify({
             "status": "error",
-            "message": f"Gemini 분석 중 오류 발생: {str(e)}"
+            "message": f"{provider} 분석 중 오류 발생: {str(e)}"
         }), 500
 
 

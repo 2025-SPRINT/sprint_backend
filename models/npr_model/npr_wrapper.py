@@ -27,10 +27,12 @@ seed_torch(100)
 
 class NPRDetector:
     def __init__(self, model_filename="model_epoch_last_3090.pth"):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
 
         if torch.cuda.is_available():
             print(f"✅ Using GPU for NPR model inference")
+        elif torch.backends.mps.is_available():
+            print(f"✅ Using Apple Silicon for NPR model inference")
         else:
             print(f"⚠️ Using CPU for NPR model inference")
         

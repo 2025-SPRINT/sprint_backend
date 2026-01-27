@@ -140,3 +140,4 @@ yarl==1.22.0
 youtube-transcript-api==1.2.3
 yt-dlp==2025.12.8
 zstandard==0.25.0
+ollama
