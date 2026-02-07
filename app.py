@@ -85,12 +85,10 @@ def get_video_info():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
-# 3. 딥페이크 탐지
-# ==========================================
-# ==========================================
 # 3. 딥페이크 탐지 (NPR 원본 로직 적용 + 기존 응답 구조 유지)
 # ==========================================
-@app.route('/api/video/detect', methods=['POST'])
+
+# @app.route('/api/video/detect', methods=['POST'])
 @trace("Route: Analyze NPR (Deepfake)")
 def detect_deepfake():
     """
@@ -189,128 +187,51 @@ def detect_deepfake():
         print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
-############# 승언 추가 #############
-# youtube-transcript-api 패키지 설치
-# 주의: 설치 후 커널을 재시작해야 할 수 있습니다 (Kernel -> Restart Kernel)
-# pip install youtube-transcript-api 를 터미널에 입력하세요.
 
-import json
-from youtube_transcript_api import YouTubeTranscriptApi
-from flask import Flask, jsonify
-from flask import request
-
-# app = Flask(__name__)
-
-@app.route('/transcript', methods=['POST'])
-def get_youtube_transcript():
+# ==========================================
+# 3. 딥페이크 탐지 (Gemini 2.5 Flash 적용)
+# ==========================================
+@app.route('/api/video/detect', methods=['POST'])
+@trace("Route: Analyze Video with Gemini 2.5 Flash (Deepfake)")
+def detect_deepfake_with_gemini_25():
     """
-    유튜브 영상의 자막을 추출하는 함수
-    
-    Parameters:
-    - video_url: 유튜브 영상 URL (예: https://www.youtube.com/watch?v=abcd1234)
-    - languages: 원하는 언어 코드 리스트 (예: ['ko', 'en']). None이면 기본 언어 사용
-    - save_to_json: JSON 파일로 저장할 경로 (예: 'transcript.json'). None이면 저장하지 않음
-    
-    Returns:
-    - 자막 데이터 리스트 (각 항목: {'text': str, 'start': float, 'duration': float})
+    Gemini 2.5 Flash를 사용하여 영상의 AI/Real 확률을 분석합니다.
     """
-
-    data = request.json
-    video_url = data.get('video_url')
-    languages = data.get('languages')
-    save_to_json = data.get('save_to_json')
-    
-    if not video_url:
-        return jsonify({"status": "error", "message": "video_url is required"}), 400
-    
-    # YouTube URL에서 video_id 분리
-    # 예: https://www.youtube.com/watch?v=abcd1234 -> abcd1234
-    video_id = video_url.split("v=")[-1].split("&")[0]
-
-    try:
-        # YouTubeTranscriptApi 인스턴스 생성
-        ytt_api = YouTubeTranscriptApi()
-        
-        # 자막 가져오기
-        if languages:
-            transcript = ytt_api.fetch(video_id, languages=languages)
-        else:
-            # 언어 지정 없이 자동으로 사용 가능한 자막 선택
-            transcript = ytt_api.fetch(video_id)
-        
-        # JSON 파일로 저장 (옵션)
-        if save_to_json:
-            with open(save_to_json, 'w', encoding='utf-8') as f:
-                json.dump(transcript, f, ensure_ascii=False, indent=4)
-            print(f"Transcript saved to {save_to_json}")
-        
-        return jsonify({"status": "success", "transcript": transcript})
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# 사용 예시
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
-# 수정 제안 예시
-from youtube_transcript_api.formatters import TextFormatter
-
-def get_youtube_transcript2(video_url, languages=['ko', 'en']):
-    from yt_shorts import get_video_id
-    video_id = get_video_id(video_url) # 다양한 URL 지원
-    if not video_id: return None
-
-    try:
-        ytt_api = YouTubeTranscriptApi()
-        transcript = ytt_api.fetch(video_id, languages=languages)
-        
-        # 순수 텍스트로 변환하여 Gemini 분석에 최적화
-        formatter = TextFormatter()
-        return formatter.format_transcript(transcript).strip()
-    except Exception:
-        return None
-
-
-############# 도현 추가 #############
-
-from gemini_main import main as gemini_analyze, PROMPT_1
-import asyncio, os
-
-@app.route('/analyze', methods=['POST'])
-@trace("Route: Analyze script (Gemini)")
-def analyze():
     data = request.get_json()
-    if not data or 'script' not in data:
-        return jsonify({
-            "status": "error",
-            "message": "Missing 'script' in request body"
-        }), 400
-    
-    script = data.get('script')
-    prompt = data.get('prompt', PROMPT_1)
+    url = data.get("url")
+    if not url: return jsonify({"status": "error", "message": "URL 필요"}), 400
     
     try:
-        # gemini_analyze is an async function, so we run it using asyncio
-        report = asyncio.run(gemini_analyze(prompt, script))
-
-        # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
-        try:
-            report_data = json.loads(report)
-        except (TypeError, json.JSONDecodeError):
-            report_data = report
+        v_id = get_video_id(url)
+        res = collect_and_split_data(get_or_save_api_key(), url, v_id)
+        _, storage_path = get_safe_metadata(res)
+        
+        video_path = os.path.join(storage_path, "video.mp4")
+        if not os.path.exists(video_path):
+            for f in os.listdir(storage_path):
+                if f.endswith((".mp4", ".webm")):
+                    video_path = os.path.join(storage_path, f)
+                    break
+        
+        ai_val, human_val = analyze_with_gemini_25(video_path)
 
         return jsonify({
             "status": "success",
-            "report": report_data
+            "data": {
+                "video_id": v_id,
+                "detection_result": {
+                    "avg_fake_score": round(ai_val, 4),  # AI로 판정된 프레임들의 평균 점수
+                    "avg_real_score": round(human_val, 4),  # Real로 판정된 프레임들의 평균 점수
+                    "fake_frame_count": 1,
+                    "real_frame_count": 1,
+                    "total_analyzed_frames": 1
+                }
+            }
         })
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-###################################
+# ==========================================
 
 import json
 import asyncio

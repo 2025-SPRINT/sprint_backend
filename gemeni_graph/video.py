@@ -12,11 +12,11 @@ genai.configure(api_key=os.getenv("API_KEY"))
 # 2. 분석할 동영상 경로 (본인의 경로로 수정)
 VIDEO_PATH = r"C:\\Users\\LG\\OneDrive\\Desktop\\ai 영상\\E.mp4"
 
-def analyze_with_gemini_25():
+def analyze_with_gemini_25(video_path: str) -> tuple[int, int]:
     try:
         # [STEP 1] 동영상 파일 업로드
         print("📤 Gemini 2.5 서버로 동영상 업로드 중...")
-        video_file = genai.upload_file(path=VIDEO_PATH)
+        video_file = genai.upload_file(path=video_path)
         print(f"✅ 업로드 완료: {video_file.name}")
 
         # [STEP 2] 동영상 처리 대기
@@ -57,23 +57,25 @@ def analyze_with_gemini_25():
         human_val = data.get('human_score', 0)
 
         # [STEP 5] 그래프 그리기
-        labels = ['AI Generated', 'Human Created']
-        scores = [ai_val, human_val]
-        colors = ['#FF6B6B', '#4D96FF']
+        # labels = ['AI Generated', 'Human Created']
+        # scores = [ai_val, human_val]
+        # colors = ['#FF6B6B', '#4D96FF']
 
-        plt.figure(figsize=(7, 7))
-        plt.pie(scores, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors, explode=(0.05, 0))
-        plt.title(f"Gemini 2.5 Analysis: {video_file.display_name}")
-        plt.show()
+        # plt.figure(figsize=(7, 7))
+        # plt.pie(scores, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors, explode=(0.05, 0))
+        # plt.title(f"Gemini 2.5 Analysis: {video_file.display_name}")
+        # plt.show()
 
         print(f"✅ 분석 성공! AI 확률: {ai_val}% / 실제 촬영 확률: {human_val}%")
         
         # (선택 사항) 업로드한 파일 삭제 - 서버를 깔끔하게 유지하려면 주석 해제
-        # genai.delete_file(video_file.name)
+        genai.delete_file(video_file.name)
+
+        return ai_val, human_val
 
     except Exception as e:
         print(f"❌ 오류 발생: {e}")
         print("💡 팁: JSON 파싱 에러가 난다면 Gemini의 응답이 형식을 지키지 않은 것일 수 있습니다.")
 
-# 코드 실행
-analyze_with_gemini_25()
+if __name__ == "__main__":
+    analyze_with_gemini_25(VIDEO_PATH)
