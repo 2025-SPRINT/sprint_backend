@@ -27,6 +27,13 @@ import cv2
 import imageio
 from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
 from models.npr_model.npr_wrapper import NPRDetector
+import base64
+import re
+import gemini_main # 이미 설정된 Gemini 모델 객체
+from google import genai
+import mediapipe as mp
+from google.genai import types
+from moviepy import VideoFileClip
 
 # ==========================================
 # 1. 전역 설정 및 모델 로드
@@ -90,24 +97,58 @@ def get_video_info():
 # ==========================================
 # 3. 딥페이크 탐지 (NPR 원본 로직 적용 + 기존 응답 구조 유지)
 # ==========================================
+
+# MediaPipe 초기화 (전역 설정)
+mp_face_detection = mp.solutions.face_detection
+face_detection = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
+
+
+def analyze_audio_ai(video_path):
+    print(f"🎙️ 오디오 분석 시작: {video_path}")
+    audio_path = video_path.replace(".mp4", ".mp3")
+    
+    try:
+        # 영상에서 오디오 추출
+        video = VideoFileClip(video_path)
+        if video.audio is None:
+            return "0.0"
+        
+        video.audio.write_audiofile(audio_path, logger=None)
+        
+        # Gemini 분석
+        client = genai.Client(api_key=os.getenv("API_KEY"))
+        with open(audio_path, "rb") as f:
+            audio_data = f.read()
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                "이 오디오의 목소리가 AI로 생성되거나 변조된 것인지 분석해줘. 특히 Google의 오디오 SynthID 워터마크가 있는지 확인하고, AI 목소리일 확률을 0.0에서 1.0 사이의 숫자로만 답변해줘.",
+                types.Part.from_bytes(data=audio_data, mime_type='audio/mp3')
+            ]
+        )
+        return response.text
+    except Exception as e:
+        print(f"오디오 분석 에러: {e}")
+        return "0.0"
+    finally:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+
+# 2. 그 다음 실제 라우트 함수를 정의합니다.
 @app.route('/api/video/detect', methods=['POST'])
-@trace("Route: Analyze NPR (Deepfake)")
-def detect_deepfake():
-    """
-    NPR-CVPR2024 원본 추론 로직을 사용함
-    """
+@trace("Route: Analyze Gemini with Face Crop")
+def detect_deepfake(): # 이 함수 이름이 라우트와 연결됩니다.
     data = request.get_json(silent=True) or {}
     url = data.get("url")
-    interval = int(data.get("interval", 20))
-    threshold = float(data.get("threshold", 0.5))
+    interval = int(data.get("interval", 40)) 
+    threshold = 0.5 
 
     if not url:
         return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
     try:
-        print(f"\n🚀 영상 분석 시작 (NPR 원본 로직)") 
-        
-        # [STEP 1] 영상 추출 및 파일 경로 획득
+        # [STEP 1] 영상 확보
         v_id = get_video_id(url)
         res = collect_and_split_data(get_or_save_api_key(), url, v_id)
         _, storage_path = get_safe_metadata(res)
@@ -118,69 +159,75 @@ def detect_deepfake():
                 if f.endswith((".mp4", ".webm")):
                     video_path = os.path.join(storage_path, f)
                     break
-        
-        # [STEP 2] NPR 모델 분석 실행 (안전/견고 버전)
+
+        # [NEW] 오디오 분석 호출 (이제 위에서 정의했으므로 인식됩니다)
+        audio_res_text = analyze_audio_ai(video_path)
+        audio_match = re.search(r"0\.\d+|1\.0|0", str(audio_res_text))
+        audio_fake_score = float(audio_match.group()) if audio_match else 0.0
+
+        # [STEP 2] 비디오 분석
         cap = cv2.VideoCapture(video_path)
-        fake_frame_count = 0
+        fake_scores = []
+        real_scores = []
         analyzed_frames = 0
         frame_idx = 0
-
-        try:
-            if not cap.isOpened():
-                raise RuntimeError(f"비디오를 열 수 없음: {video_path}")
-
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-            # 코덱 불안정으로 인한 빈 프레임 방어
-                if frame is None or frame.size == 0:
-                    frame_idx += 1
-                    continue
-
-            # Interval마다 분석 및 저장 수행
-                if frame_idx % interval == 0:
-                # [이미지 저장]
-                # [NPR 분석]
-                    try:
-                        score = float(npr_detector.predict_image(frame))
-                        if score > threshold:
-                            fake_frame_count += 1
-                        analyzed_frames += 1
-                    except Exception as e:
-                        print(f"[WARN] {frame_idx}번 프레임 분석 중 모델 에러: {e}")
-                frame_idx += 1
-
-        finally:
-            cap.release()
-
-    # 결과 검증
-        if analyzed_frames == 0:
-            raise RuntimeError("분석/저장된 프레임이 없습니다. 파일이나 설정을 확인하세요.")
-
         
-        # [STEP 3] AI 생성률(ai_rate) 계산
-        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
-        print(f"✅ 분석 완료: 생성률 {round(ai_rate, 2)}%")
+        client = genai.Client(api_key=os.getenv("API_KEY"))
 
-        # [STEP 4] 기존 응답 형식 그대로 반환
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret: break
+
+            if frame_idx % interval == 0 and analyzed_frames < 10:
+                results = face_detection.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                if results.detections:
+                    detection = results.detections[0]
+                    bbox = detection.location_data.relative_bounding_box
+                    ih, iw, _ = frame.shape
+                    cx, cy = (bbox.xmin + bbox.width / 2) * iw, (bbox.ymin + bbox.height / 2) * ih
+                    nw, nh = bbox.width * iw * 1.5, bbox.height * ih * 1.5
+                    x1, y1 = max(0, int(cx - nw / 2)), max(0, int(cy - nh / 2))
+                    x2, y2 = min(iw, int(cx + nw / 2)), min(ih, int(cy + nh / 2))
+                    face_crop = frame[y1:y2, x1:x2]
+                    
+                    if face_crop.size > 0:
+                        _, buffer = cv2.imencode('.jpg', face_crop)
+                        prompt = "Analyze this human face. Is it AI-generated (Deepfake) or a real human photograph? Answer with a single float number between 0.0 (Real) and 1.0 (AI Generated)."
+                        response = client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=[
+                                types.Part.from_text(text=prompt),
+                                types.Part.from_bytes(data=buffer.tobytes(), mime_type='image/jpeg')
+                            ]
+                        )
+                        match = re.search(r"0\.\d+|1\.0|0", response.text)
+                        score = float(match.group()) if match else 0.5
+                        if score > threshold: fake_scores.append(score)
+                        else: real_scores.append(score)
+                        analyzed_frames += 1
+            frame_idx += 1
+        cap.release()
+
+        # [STEP 3] 최종 결과 계산 (기존 명세 유지)
+        avg_v_score = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
+        # 비디오 6 : 오디오 4 비율로 혼합
+        combined_score = (avg_v_score * 0.6) + (audio_fake_score * 0.4)
+        avg_real_score = sum(real_scores) / len(real_scores) if real_scores else 0.0
+
         return jsonify({
             "status": "success",
             "data": {
                 "video_id": v_id,
                 "detection_result": {
-                    "is_deepfake": ai_rate > 50, # 기존 예시 기준 유지
-                    "confidence_score": f"{round(ai_rate, 2)}%",
-                    "detected_frames": fake_frame_count,
+                    "avg_fake_score": round(combined_score, 4),
+                    "avg_real_score": round(avg_real_score, 4),
+                    "fake_frame_count": len(fake_scores),
+                    "real_frame_count": len(real_scores),
                     "total_analyzed_frames": analyzed_frames
                 }
             }
         })
-
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
 ############# 승언 추가 #############
@@ -385,6 +432,6 @@ def analyze_video():
 
 if __name__ == '__main__':
     # 참고: MCP 커넥터는 첫 요청 시 Lazy 초기화됩니다 (이벤트 루프 충돌 방지)
-    app.run(debug=True, host='0.0.0.0', port=5173)
+    app.run(debug=True, host='127.0.0.1', port=5000)
 
 ########################################
