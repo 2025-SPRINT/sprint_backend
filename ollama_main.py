@@ -112,6 +112,11 @@ async def main(prompt, script, model_name=DEFAULT_MODEL):
 
     full_prompt = f"{target_prompt}\n\n[광고 스크립트]:\n{script}"
     
+    # Qwen3 특수 처리: Thinking mode 비활성화
+    # Qwen3는 기본적으로 <think> 블록을 출력하므로 JSON 형식이 깨질 수 있음
+    if "qwen3" in model_name.lower():
+        full_prompt = full_prompt + "\n\n/no_think"
+    
     messages = [
         {'role': 'user', 'content': full_prompt}
     ]

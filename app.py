@@ -355,21 +355,40 @@ def analyze_video():
             "message": f"자막을 가져오는데 실패했습니다: {str(e)}"
         }), 500
 
-    # 3. AI 분석 (Gemini vs Ollama)
-    provider = data.get('provider', 'gemini') # gemini or ollama
+    # 3. AI 분석 (Gemini vs Ollama vs Friendli)
+    provider = data.get('provider', 'gemini') # gemini, ollama, or friendli
+    model_name = data.get('model')  # Custom model name (optional)
     
     try:
         report = ""
         analysis_result = {}
 
-        if provider == 'ollama':
+        if provider == 'friendli':
+            # Friendli.ai Serverless API 분석
+            from friendli_main import main as friendli_analyze
+            
+            # Default to DeepSeek-V3.1 if model not specified
+            # 지원 모델: exaone, qwen, deepseek (또는 전체 모델명)
+            target_model = model_name if model_name else "deepseek-ai/DeepSeek-V3.1"
+            
+            print(f"🚀 Friendli 분석 시작 (Model: {target_model})")
+            report = asyncio.run(friendli_analyze(custom_prompt, script_text, model_name=target_model))
+
+        elif provider == 'ollama':
             # Ollama 분석 (import needs to be lazy or top-level, adding import here for safety/clarity)
             from ollama_main import main as ollama_analyze
-            print(f"🚀 Ollama 분석 시작")
-            report = asyncio.run(ollama_analyze(custom_prompt, script_text))
+            
+            # Default to exaone-deep if model not specified for ollama
+            target_model = model_name if model_name else "exaone-deep:7.8b"
+            
+            print(f"🚀 Ollama 분석 시작 (Model: {target_model})")
+            report = asyncio.run(ollama_analyze(custom_prompt, script_text, model_name=target_model))
         else:
             # Gemini 분석
             print(f"🚀 Gemini 분석 시작")
+            # Gemini currently handles its own model selection inside gemini_main, 
+            # but we could potentially pass it if we update gemini_main.
+            # For now, we only support changing prompt/script.
             report = asyncio.run(gemini_analyze(custom_prompt, script_text))
         
         # 결과 파싱 (공통 로직)
@@ -383,6 +402,7 @@ def analyze_video():
             "data": {
                 "video_id": video_id,
                 "provider": provider,
+                "model": model_name if model_name else (provider if provider == 'gemini' else "exaone-deep:7.8b"),
                 "analysis_result": analysis_result
             }
         })
