@@ -137,8 +137,11 @@ def analyze_audio_ai(video_path):
 
 # 2. 그 다음 실제 라우트 함수를 정의합니다.
 @app.route('/api/video/detect', methods=['POST'])
-@trace("Route: Analyze Gemini with Face Crop")
-def detect_deepfake(): # 이 함수 이름이 라우트와 연결됩니다.
+@trace("Route: Analyze NPR (Deepfake)")
+def detect_deepfake():
+    """
+    NPR-CVPR2024 원본 추론 로직을 사용함
+    """
     data = request.get_json(silent=True) or {}
     url = data.get("url")
     interval = int(data.get("interval", 40)) 
@@ -148,7 +151,9 @@ def detect_deepfake(): # 이 함수 이름이 라우트와 연결됩니다.
         return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
     try:
-        # [STEP 1] 영상 확보
+        print(f"\n🚀 영상 분석 시작 (NPR 원본 로직)") 
+        
+        # [STEP 1] 영상 추출 및 파일 경로 획득
         v_id = get_video_id(url)
         res = collect_and_split_data(get_or_save_api_key(), url, v_id)
         _, storage_path = get_safe_metadata(res)
@@ -159,70 +164,55 @@ def detect_deepfake(): # 이 함수 이름이 라우트와 연결됩니다.
                 if f.endswith((".mp4", ".webm")):
                     video_path = os.path.join(storage_path, f)
                     break
-
-        # [NEW] 오디오 분석 호출 (이제 위에서 정의했으므로 인식됩니다)
-        audio_res_text = analyze_audio_ai(video_path)
-        audio_match = re.search(r"0\.\d+|1\.0|0", str(audio_res_text))
-        audio_fake_score = float(audio_match.group()) if audio_match else 0.0
-
-        # [STEP 2] 비디오 분석
+        
+        # [STEP 2] NPR 모델 분석 실행 (안전/견고 버전)
         cap = cv2.VideoCapture(video_path)
-        fake_scores = []
-        real_scores = []
+        fake_frame_count = 0
         analyzed_frames = 0
         frame_idx = 0
         
         client = genai.Client(api_key=os.getenv("API_KEY"))
 
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret: break
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            if frame_idx % interval == 0 and analyzed_frames < 10:
-                results = face_detection.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                if results.detections:
-                    detection = results.detections[0]
-                    bbox = detection.location_data.relative_bounding_box
-                    ih, iw, _ = frame.shape
-                    cx, cy = (bbox.xmin + bbox.width / 2) * iw, (bbox.ymin + bbox.height / 2) * ih
-                    nw, nh = bbox.width * iw * 1.5, bbox.height * ih * 1.5
-                    x1, y1 = max(0, int(cx - nw / 2)), max(0, int(cy - nh / 2))
-                    x2, y2 = min(iw, int(cx + nw / 2)), min(ih, int(cy + nh / 2))
-                    face_crop = frame[y1:y2, x1:x2]
-                    
-                    if face_crop.size > 0:
-                        _, buffer = cv2.imencode('.jpg', face_crop)
-                        prompt = "Analyze this human face. Is it AI-generated (Deepfake) or a real human photograph? Answer with a single float number between 0.0 (Real) and 1.0 (AI Generated)."
-                        response = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=[
-                                types.Part.from_text(text=prompt),
-                                types.Part.from_bytes(data=buffer.tobytes(), mime_type='image/jpeg')
-                            ]
-                        )
-                        match = re.search(r"0\.\d+|1\.0|0", response.text)
-                        score = float(match.group()) if match else 0.5
-                        if score > threshold: fake_scores.append(score)
-                        else: real_scores.append(score)
+            # 코덱 불안정으로 인한 빈 프레임 방어
+                if frame is None or frame.size == 0:
+                    frame_idx += 1
+                    continue
+
+            # Interval마다 분석 및 저장 수행
+                if frame_idx % interval == 0:
+                # [이미지 저장]
+                # [NPR 분석]
+                    try:
+                        score = float(npr_detector.predict_image(frame))
+                        if score > threshold:
+                            fake_frame_count += 1
                         analyzed_frames += 1
             frame_idx += 1
         cap.release()
 
-        # [STEP 3] 최종 결과 계산 (기존 명세 유지)
-        avg_v_score = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
-        # 비디오 6 : 오디오 4 비율로 혼합
-        combined_score = (avg_v_score * 0.6) + (audio_fake_score * 0.4)
-        avg_real_score = sum(real_scores) / len(real_scores) if real_scores else 0.0
+    # 결과 검증
+        if analyzed_frames == 0:
+            raise RuntimeError("분석/저장된 프레임이 없습니다. 파일이나 설정을 확인하세요.")
 
+        
+        # [STEP 3] AI 생성률(ai_rate) 계산
+        ai_rate = (fake_frame_count / analyzed_frames) * 100 if analyzed_frames > 0 else 0.0
+        print(f"✅ 분석 완료: 생성률 {round(ai_rate, 2)}%")
+
+        # [STEP 4] 기존 응답 형식 그대로 반환
         return jsonify({
             "status": "success",
             "data": {
                 "video_id": v_id,
                 "detection_result": {
-                    "avg_fake_score": round(combined_score, 4),
-                    "avg_real_score": round(avg_real_score, 4),
-                    "fake_frame_count": len(fake_scores),
-                    "real_frame_count": len(real_scores),
+                    "is_deepfake": ai_rate > 50, # 기존 예시 기준 유지
+                    "confidence_score": f"{round(ai_rate, 2)}%",
+                    "detected_frames": fake_frame_count,
                     "total_analyzed_frames": analyzed_frames
                 }
             }
