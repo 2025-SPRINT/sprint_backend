@@ -1,7 +1,10 @@
 import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # 본인의 키를 넣어주세요
-genai.configure(api_key="AIzaSyD7NQnSDuycZNDhy1AYOOxbd7Dhovjids8")
+genai.configure(api_key=os.getenv("API_KEY"))
 
 print("--- 사용 가능한 모델 목록 ---")
 for m in genai.list_models():
@@ -13,8 +16,6 @@ import json
 import matplotlib.pyplot as plt
 import PIL.Image
 
-# 1. 설정
-genai.configure(api_key="AIzaSyD7NQnSDuycZNDhy1AYOOxbd7Dhovjids8")
 model_name = 'models/gemini-2.5-flash' # 1단계에서 확인한 이름으로 수정 가능
 
 try:

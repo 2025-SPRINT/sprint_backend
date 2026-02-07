@@ -6,15 +6,11 @@ import yt_dlp
 import json
 import time
 from utils.profiler import trace, profiler
-
-# 1. API 키 설정 및 로드 함수
-API_KEY_FILE = 'api_key.txt'
+from dotenv import load_dotenv
+load_dotenv()
 
 def get_or_save_api_key():
-    if os.path.exists(API_KEY_FILE):
-        with open(API_KEY_FILE, 'r', encoding='utf-8') as f:
-            return f.read().strip()
-    return ""
+    return os.getenv("YT_SHORTS_API_KEY")
 
 def get_video_id(url):
     patterns = [r'shorts/([\w-]+)', r'v=([\w-]+)', r'youtu.be/([\w-]+)']

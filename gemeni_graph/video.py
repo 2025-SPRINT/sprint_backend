@@ -2,13 +2,15 @@ import google.generativeai as genai
 import time
 import json
 import matplotlib.pyplot as plt
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # 1. API 설정
-MY_API_KEY = "AIzaSyD7NQnSDuycZNDhy1AYOOxbd7Dhovjids8"
-genai.configure(api_key=MY_API_KEY)
+genai.configure(api_key=os.getenv("API_KEY"))
 
 # 2. 분석할 동영상 경로 (본인의 경로로 수정)
-VIDEO_PATH = r"C:\Users\LG\OneDrive\Desktop\ai 영상\E.mp4"
+VIDEO_PATH = r"C:\\Users\\LG\\OneDrive\\Desktop\\ai 영상\\E.mp4"
 
 def analyze_with_gemini_25():
     try:
