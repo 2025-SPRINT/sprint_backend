@@ -74,16 +74,24 @@ def get_video_info():
         stats = item.get('statistics', {})
 
         # 3. 이상적인 명세서(Ideal Spec) 규격에 맞춘 응답 구성 
+        response_data = {
+            "video_id": v_id, 
+            "title": snippet.get("title"),
+            "channel_name": snippet.get("channelTitle"), 
+            "published_at": snippet.get("publishedAt"), 
+            "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url"), 
+            "view_count": stats.get("viewCount") 
+        }
+
+        # [NEW] DB 저장 (Partial Update)
+        try:
+            db_handler.save_analysis_result(response_data)
+        except Exception as e:
+            print(f"⚠️ [DB Error] {e}")
+
         return jsonify({
             "status": "success",
-            "data": {
-                "video_id": v_id, 
-                "title": snippet.get("title"),
-                "channel_name": snippet.get("channelTitle"), 
-                "published_at": snippet.get("publishedAt"), 
-                "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url"), 
-                "view_count": stats.get("viewCount") 
-            }
+            "data": response_data
         })
     except Exception as e:
         # 에러 메시지를 구체적으로 확인하기 위해 e 출력
@@ -218,6 +226,26 @@ def detect_deepfake_with_gemini_25():
     
     try:
         v_id = get_video_id(url)
+        
+        # [NEW] DB에서 기존 분석 결과 확인
+        cached_result = db_handler.get_analysis_result(v_id)
+        if cached_result:
+            print(f"✅ [Cache Hit] Returning cached result for {v_id}")
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": v_id,
+                    "detection_result": {
+                        "avg_fake_score": round(cached_result.get('ai_score', 0), 4),
+                        "avg_real_score": round(cached_result.get('human_score', 0), 4),
+                        "fake_frame_count": 1,
+                        "real_frame_count": 1,
+                        "total_analyzed_frames": 1,
+                        "cached": True # 캐시된 데이터임을 표시
+                    }
+                }
+            })
+
         res = collect_and_split_data(os.getenv("YT_SHORTS_API_KEY"), url, v_id)
         _, storage_path = get_safe_metadata(res)
         
@@ -256,8 +284,8 @@ def detect_deepfake_with_gemini_25():
             "data": {
                 "video_id": v_id,
                 "detection_result": {
-                    "avg_fake_score": round(ai_val, 4),  # AI로 판정된 프레임들의 평균 점수
-                    "avg_real_score": round(human_val, 4),  # Real로 판정된 프레임들의 평균 점수
+                    "avg_fake_score": round(float(ai_val), 4),  # AI로 판정된 프레임들의 평균 점수
+                    "avg_real_score": round(float(human_val), 4),  # Real로 판정된 프레임들의 평균 점수
                     "fake_frame_count": 1,
                     "real_frame_count": 1,
                     "total_analyzed_frames": 1
@@ -323,11 +351,20 @@ def analyze_video():
         # asyncio.run을 사용하여 비동기 분석 함수 실행
         report = asyncio.run(gemini_analyze(custom_prompt, script_text))
         
-        # gemini_main에서 반환된 JSON 문자열을 파싱하여 객체로 변환
         try:
             analysis_result = json.loads(report)
         except (TypeError, json.JSONDecodeError):
             analysis_result = report
+
+        # [NEW] DB 저장 (Partial Update)
+        try:
+            db_data = {
+                "video_id": video_id,
+                "script_analysis": analysis_result # script 분석 결과는 별도 필드로 저장
+            }
+            db_handler.save_analysis_result(db_data)
+        except Exception as e:
+            print(f"⚠️ [DB Error] {e}")
 
         return jsonify({
             "status": "success",
@@ -343,6 +380,22 @@ def analyze_video():
             "message": f"Gemini 분석 중 오류 발생: {str(e)}"
         }), 500
 
+from youtube_transcript_api.formatters import TextFormatter
+
+def get_youtube_transcript2(video_url, languages=['ko', 'en']):
+    from yt_shorts import get_video_id
+    video_id = get_video_id(video_url) # 다양한 URL 지원
+    if not video_id: return None
+
+    try:
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=languages)
+        
+        # 순수 텍스트로 변환하여 Gemini 분석에 최적화
+        formatter = TextFormatter()
+        return formatter.format_transcript(transcript).strip()
+    except Exception:
+        return None
 
 ############## 건드리지 말 것 ##############
 

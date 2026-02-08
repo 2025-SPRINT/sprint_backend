@@ -55,26 +55,91 @@ class DynamoDBHandler:
 
     def save_analysis_result(self, data: dict):
         """
-        Saves the analysis result to DynamoDB.
+        Saves or updates the analysis result to DynamoDB using partial update.
         """
         if not self.table:
             print("❌ [DynamoDB] Table resource is not initialized.")
             return False
 
         try:
-            # Convert float to Decimal for DynamoDB
+            video_id = data.get('video_id')
+            if not video_id:
+                print("❌ [DynamoDB] No video_id provided.")
+                return False
+
+            # Prepare UpdateExpression
+            update_parts = []
+            expression_attribute_values = {}
+            expression_attribute_names = {}
+
+            # Convert float to Decimal manually if not using simplejson/dynamodbjson
             item = json.loads(json.dumps(data), parse_float=Decimal)
-            item['created_at'] = int(time.time())
             
-            self.table.put_item(Item=item)
-            print(f"✅ [DynamoDB] Saved analysis for video: {data.get('video_id', 'Unknown')}")
+            for key, value in item.items():
+                if key == 'video_id':
+                    continue
+                
+                # Use #key to avoid reserved word conflicts (e.g., 'usage', 'date')
+                attr_name = f"#{key}"
+                val_name = f":{key}"
+                
+                update_parts.append(f"{attr_name} = {val_name}")
+                expression_attribute_names[attr_name] = key
+                expression_attribute_values[val_name] = value
+
+            if not update_parts:
+                return True
+
+            # Add updated_at
+            update_parts.append("#updated_at = :updated_at")
+            expression_attribute_names["#updated_at"] = "updated_at"
+            expression_attribute_values[":updated_at"] = int(time.time())
+
+            update_expression = "SET " + ", ".join(update_parts)
+
+            self.table.update_item(
+                Key={'video_id': video_id},
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=expression_attribute_names,
+                ExpressionAttributeValues=expression_attribute_values
+            )
+            print(f"✅ [DynamoDB] Updated analysis for video: {video_id}")
             return True
+            
         except ClientError as e:
-            print(f"❌ [DynamoDB] Put Item Error: {e}")
+            print(f"❌ [DynamoDB] Update Item Error: {e}")
             return False
         except Exception as e:
-            print(f"❌ [DynamoDB] Error saving item: {e}")
+            print(f"❌ [DynamoDB] Error updating item: {e}")
             return False
+
+    def get_analysis_result(self, video_id: str):
+        """
+        Retrieves the analysis result from DynamoDB.
+        """
+        if not self.table:
+            return None
+
+        try:
+            response = self.table.get_item(Key={'video_id': video_id})
+            item = response.get('Item')
+            if item:
+                # Decimal -> float/int conversion for JSON serialization if needed
+                # But for now, returning as is (Flask handles Decimal slightly weirdly, might need conversion)
+                def decimal_default(obj):
+                    if isinstance(obj, Decimal):
+                        return float(obj)
+                    raise TypeError
+                
+                # Clean up the item to be standard python dict with floats
+                return json.loads(json.dumps(item, default=decimal_default))
+            return None
+        except ClientError as e:
+            print(f"❌ [DynamoDB] Get Item Error: {e}")
+            return None
+        except Exception as e:
+            print(f"❌ [DynamoDB] Error getting item: {e}")
+            return None
 
 # Singleton instance
 db_handler = DynamoDBHandler()
