@@ -2,7 +2,6 @@ from google import genai
 from google.genai import types
 import time
 import json
-import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
 
