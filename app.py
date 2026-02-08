@@ -246,52 +246,56 @@ def detect_deepfake_with_gemini_25():
                 }
             })
 
+        # [NEW] 파일 다운로드 및 분석 (try-finally로 정리 보장)
         res = collect_and_split_data(os.getenv("YT_SHORTS_API_KEY"), url, v_id)
         _, storage_path = get_safe_metadata(res)
         
-        video_path = os.path.join(storage_path, "video.mp4")
-        print("[/api/video/detect] video_path: ", video_path)
-        if not os.path.exists(video_path):
-            for f in os.listdir(storage_path):
-                if f.endswith((".mp4", ".webm")):
-                    video_path = os.path.join(storage_path, f)
-                    break
-        
-        result = video.analyze_with_gemini_25(video_path)
-        if result is None:
-            return jsonify({"status": "error", "message": "분석 실패"}), 500
-        ai_val, human_val = result
-
-        # [NEW] 결과 데이터 구성
-        analysis_data = {
-            "video_id": v_id,
-            "ai_score": ai_val,
-            "human_score": human_val,
-            "storage_path": storage_path, # 디버깅용 (나중에 삭제 가능)
-        }
-
-        # [NEW] DB 저장 및 파일 정리
         try:
-            db_saved = db_handler.save_analysis_result(analysis_data)
-            if db_saved:
-                print(f"🗑️ [Cleanup] Deleting temporary files: {storage_path}")
-                shutil.rmtree(storage_path) # 성공 시 로컬 파일 삭제
-        except Exception as e:
-            print(f"⚠️ [Cleanup Error] {e}")
+            video_path = os.path.join(storage_path, "video.mp4")
+            print("[/api/video/detect] video_path: ", video_path)
+            if not os.path.exists(video_path):
+                for f in os.listdir(storage_path):
+                    if f.endswith((".mp4", ".webm")):
+                        video_path = os.path.join(storage_path, f)
+                        break
+            
+            result = video.analyze_with_gemini_25(video_path)
+            if result is None:
+                return jsonify({"status": "error", "message": "분석 실패"}), 500
+            ai_val, human_val = result
 
-        return jsonify({
-            "status": "success",
-            "data": {
+            # [NEW] 결과 데이터 구성
+            analysis_data = {
                 "video_id": v_id,
-                "detection_result": {
-                    "avg_fake_score": round(float(ai_val), 4),  # AI로 판정된 프레임들의 평균 점수
-                    "avg_real_score": round(float(human_val), 4),  # Real로 판정된 프레임들의 평균 점수
-                    "fake_frame_count": 1,
-                    "real_frame_count": 1,
-                    "total_analyzed_frames": 1
-                }
+                "ai_score": ai_val,
+                "human_score": human_val,
+                "storage_path": storage_path, # 디버깅용 (나중에 삭제 가능)
             }
-        })
+
+            # [NEW] DB 저장 (Partial Update)
+            try:
+                db_handler.save_analysis_result(analysis_data)
+            except Exception as e:
+                print(f"⚠️ [DB Error] {e}")
+
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": v_id,
+                    "detection_result": {
+                        "avg_fake_score": round(float(ai_val), 4),  # AI로 판정된 프레임들의 평균 점수
+                        "avg_real_score": round(float(human_val), 4),  # Real로 판정된 프레임들의 평균 점수
+                        "fake_frame_count": 1,
+                        "real_frame_count": 1,
+                        "total_analyzed_frames": 1
+                    }
+                }
+            })
+        finally:
+            # 성공/실패 여부와 관계없이 임시 폴더 삭제
+            if os.path.exists(storage_path):
+                print(f"🗑️ [Cleanup] Deleting temporary files: {storage_path}")
+                shutil.rmtree(storage_path)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
