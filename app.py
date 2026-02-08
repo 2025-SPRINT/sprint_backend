@@ -63,6 +63,24 @@ def get_video_info():
         api_key = get_or_save_api_key() # 변수명을 명확히 할당
         v_id = get_video_id(url)
         
+        # [NEW] DB에서 기존 정보 확인
+        from models.dynamodb import db_handler
+        cached_info = db_handler.get_analysis_result(v_id)
+        if cached_info and cached_info.get("title"):
+             print(f"✅ [Cache Hit] Returning cached info for {v_id}")
+             return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": v_id, 
+                    "title": cached_info.get("title"),
+                    "channel_name": cached_info.get("channel_name"), 
+                    "published_at": cached_info.get("published_at"), 
+                    "thumbnail_url": cached_info.get("thumbnail_url"), 
+                    "view_count": cached_info.get("view_count"),
+                    "cached": True
+                }
+            })
+
         # 2. 영상 다운로드(yt-dlp) 없이 메타데이터만 호출 (속도 개선)
         from yt_shorts import get_metadata_only # 새로 만든 함수 임포트
         item = get_metadata_only(api_key, v_id)
