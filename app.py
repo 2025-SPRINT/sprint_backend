@@ -332,6 +332,20 @@ def analyze_video():
         video_id = get_video_id(video_url)
         if not video_id:
             video_id = video_url.split("v=")[-1].split("&")[0]
+
+        # [NEW] DB에서 기존 스크립트 분석 결과 확인
+        cached_result = db_handler.get_analysis_result(video_id)
+        if cached_result and cached_result.get('script_analysis'):
+            print(f"✅ [Cache Hit] Returning cached script analysis for {video_id}")
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": video_id,
+                    "analysis_result": cached_result['script_analysis'],
+                    "cached": True
+                }
+            })
+
     except Exception:
         return jsonify({"status": "error", "message": "Invalid YouTube URL format"}), 400
 
