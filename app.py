@@ -437,6 +437,7 @@ def get_youtube_transcript2(video_url, languages=['ko', 'en']):
 
 if __name__ == '__main__':
     # 참고: MCP 커넥터는 첫 요청 시 Lazy 초기화됩니다 (이벤트 루프 충돌 방지)
-    app.run(debug=True, host='0.0.0.0', port=5173)
+    port = int(os.environ.get("PORT", 5173))
+    app.run(debug=True, host='0.0.0.0', port=port)
 
 ########################################
