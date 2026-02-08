@@ -2,6 +2,11 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from utils.profiler import trace, profiler
 
+# To-DO
+
+# 1. 간단한 DB 구축: DB에 영상 info, AI 생성률 분석, 분석 리포트 저장
+# 2. 분석 완료한 영상은 DB에 저장 후 다운로드한 영상 파일 삭제 로직 구현
+
 app = Flask(__name__)
 CORS(app) # 모든 origin에 대해 CORS 허용
 app.config['JSON_AS_ASCII'] = False
@@ -191,7 +196,15 @@ def get_video_info():
 # ==========================================
 # 3. 딥페이크 탐지 (Gemini 2.5 Flash 적용)
 # ==========================================
+import shutil
 import gemini_graph.video as video
+from models.dynamodb import db_handler
+
+# DB 테이블 초기 세팅 (앱 시작 시 1회 실행)
+try:
+    db_handler.create_table_if_not_exists()
+except:
+    pass
 
 @app.route('/api/video/detect', methods=['POST'])
 @trace("Route: Analyze Video with Gemini 2.5 Flash (Deepfake)")
@@ -220,6 +233,23 @@ def detect_deepfake_with_gemini_25():
         if result is None:
             return jsonify({"status": "error", "message": "분석 실패"}), 500
         ai_val, human_val = result
+
+        # [NEW] 결과 데이터 구성
+        analysis_data = {
+            "video_id": v_id,
+            "ai_score": ai_val,
+            "human_score": human_val,
+            "storage_path": storage_path, # 디버깅용 (나중에 삭제 가능)
+        }
+
+        # [NEW] DB 저장 및 파일 정리
+        try:
+            db_saved = db_handler.save_analysis_result(analysis_data)
+            if db_saved:
+                print(f"🗑️ [Cleanup] Deleting temporary files: {storage_path}")
+                shutil.rmtree(storage_path) # 성공 시 로컬 파일 삭제
+        except Exception as e:
+            print(f"⚠️ [Cleanup Error] {e}")
 
         return jsonify({
             "status": "success",
