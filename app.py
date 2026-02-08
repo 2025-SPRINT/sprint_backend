@@ -191,6 +191,8 @@ def detect_deepfake():
 # ==========================================
 # 3. 딥페이크 탐지 (Gemini 2.5 Flash 적용)
 # ==========================================
+import gemini_graph.video as video
+
 @app.route('/api/video/detect', methods=['POST'])
 @trace("Route: Analyze Video with Gemini 2.5 Flash (Deepfake)")
 def detect_deepfake_with_gemini_25():
@@ -213,7 +215,7 @@ def detect_deepfake_with_gemini_25():
                     video_path = os.path.join(storage_path, f)
                     break
         
-        ai_val, human_val = analyze_with_gemini_25(video_path)
+        ai_val, human_val = video.analyze_with_gemini_25(video_path)
 
         return jsonify({
             "status": "success",
