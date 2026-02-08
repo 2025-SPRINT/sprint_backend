@@ -47,6 +47,7 @@ def collect_and_split_data(api_key, url, video_id):
         'format': 'bv*+ba/best',
         'outtmpl': os.path.join(target_dir, "video.%(ext)s"),
         'merge_output_format': 'mp4',
+        'cookiefile': os.path.join(os.getcwd(), 'youtube_cookie.txt'), # 쿠키 파일 추가
         'postprocessors': [
             {
              'key': 'FFmpegVideoConvertor',
