@@ -23,15 +23,15 @@ def home():
 from flask import Flask, jsonify, request
 import os
 import json
-import cv2
-import imageio
+# import cv2
+# import imageio
 from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
-from models.npr_model.npr_wrapper import NPRDetector
+# from models.npr_model.npr_wrapper import NPRDetector
 
 # ==========================================
 # 1. 전역 설정 및 모델 로드
 # ==========================================
-npr_detector = NPRDetector(model_filename="model_epoch_last_3090.pth")
+# npr_detector = NPRDetector(model_filename="model_epoch_last_3090.pth")
 
 def get_safe_metadata(result):
     """result가 경로(str)면 파일을 읽고, 사전(dict)이면 그대로 반환"""
@@ -89,103 +89,103 @@ def get_video_info():
 # ==========================================
 
 # @app.route('/api/video/detect', methods=['POST'])
-@trace("Route: Analyze NPR (Deepfake)")
-def detect_deepfake():
-    """
-    NPR-CVPR2024 원본 추론 로직을 사용하여 
-    Real 및 Fake 프레임의 평균 점수를 계산합니다.
-    """
-    data = request.get_json(silent=True) or {}
-    url = data.get("url")
-    interval = int(data.get("interval", 20))
-    threshold = float(data.get("threshold", 0.5))
+# @trace("Route: Analyze NPR (Deepfake)")
+# def detect_deepfake():
+#     """
+#     NPR-CVPR2024 원본 추론 로직을 사용하여 
+#     Real 및 Fake 프레임의 평균 점수를 계산합니다.
+#     """
+#     data = request.get_json(silent=True) or {}
+#     url = data.get("url")
+#     interval = int(data.get("interval", 20))
+#     threshold = float(data.get("threshold", 0.5))
 
-    if not url:
-        return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
+#     if not url:
+#         return jsonify({"status": "error", "message": "URL이 필요합니다."}), 400
 
-    try:
-        print(f"\n🚀 영상 분석 시작 (점수 평균 계산 모드)") 
+#     try:
+#         print(f"\n🚀 영상 분석 시작 (점수 평균 계산 모드)") 
         
-        v_id = get_video_id(url)
-        res = collect_and_split_data(get_or_save_api_key(), url, v_id)
-        _, storage_path = get_safe_metadata(res)
+#         v_id = get_video_id(url)
+#         res = collect_and_split_data(get_or_save_api_key(), url, v_id)
+#         _, storage_path = get_safe_metadata(res)
         
-        video_path = os.path.join(storage_path, "video.mp4")
-        if not os.path.exists(video_path):
-            for f in os.listdir(storage_path):
-                if f.endswith((".mp4", ".webm")):
-                    video_path = os.path.join(storage_path, f)
-                    break
+#         video_path = os.path.join(storage_path, "video.mp4")
+#         if not os.path.exists(video_path):
+#             for f in os.listdir(storage_path):
+#                 if f.endswith((".mp4", ".webm")):
+#                     video_path = os.path.join(storage_path, f)
+#                     break
         
-        cap = cv2.VideoCapture(video_path)
+#         cap = cv2.VideoCapture(video_path)
         
-        # 점수 계산을 위한 변수 초기화
-        fake_scores = []
-        real_scores = []
-        analyzed_frames = 0
-        frame_idx = 0
+#         # 점수 계산을 위한 변수 초기화
+#         fake_scores = []
+#         real_scores = []
+#         analyzed_frames = 0
+#         frame_idx = 0
 
-        try:
-            if not cap.isOpened():
-                raise RuntimeError(f"비디오를 열 수 없음: {video_path}")
+#         try:
+#             if not cap.isOpened():
+#                 raise RuntimeError(f"비디오를 열 수 없음: {video_path}")
 
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
+#             while True:
+#                 ret, frame = cap.read()
+#                 if not ret:
+#                     break
 
-                if frame is None or frame.size == 0:
-                    frame_idx += 1
-                    continue
+#                 if frame is None or frame.size == 0:
+#                     frame_idx += 1
+#                     continue
 
-                # Interval마다 분석 수행
-                if frame_idx % interval == 0:
-                    try:
-                        # npr_detector로부터 0~1 사이의 score 획득
-                        score = float(npr_detector.predict_image(frame))
+#                 # Interval마다 분석 수행
+#                 if frame_idx % interval == 0:
+#                     try:
+#                         # npr_detector로부터 0~1 사이의 score 획득
+#                         score = float(npr_detector.predict_image(frame))
                         
-                        # threshold 기준으로 Real/Fake 분리하여 리스트에 저장
-                        if score > threshold:
-                            fake_scores.append(score)
-                        else:
-                            real_scores.append(score)
+#                         # threshold 기준으로 Real/Fake 분리하여 리스트에 저장
+#                         if score > threshold:
+#                             fake_scores.append(score)
+#                         else:
+#                             real_scores.append(score)
                             
-                        analyzed_frames += 1
-                    except Exception as e:
-                        print(f"[WARN] {frame_idx}번 프레임 분석 중 모델 에러: {e}")
-                frame_idx += 1
+#                         analyzed_frames += 1
+#                     except Exception as e:
+#                         print(f"[WARN] {frame_idx}번 프레임 분석 중 모델 에러: {e}")
+#                 frame_idx += 1
 
-        finally:
-            cap.release()
+#         finally:
+#             cap.release()
 
-        if analyzed_frames == 0:
-            raise RuntimeError("분석된 프레임이 없습니다.")
+#         if analyzed_frames == 0:
+#             raise RuntimeError("분석된 프레임이 없습니다.")
 
-        # [평균 점수 계산]
-        # 리스트가 비어있을 경우(0)를 대비해 처리
-        avg_fake_score = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
-        avg_real_score = sum(real_scores) / len(real_scores) if real_scores else 0.0
+#         # [평균 점수 계산]
+#         # 리스트가 비어있을 경우(0)를 대비해 처리
+#         avg_fake_score = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
+#         avg_real_score = sum(real_scores) / len(real_scores) if real_scores else 0.0
 
-        print(f"✅ 분석 완료: Fake 평균 {round(avg_fake_score, 4)}, Real 평균 {round(avg_real_score, 4)}")
+#         print(f"✅ 분석 완료: Fake 평균 {round(avg_fake_score, 4)}, Real 평균 {round(avg_real_score, 4)}")
 
-        return jsonify({
-            "status": "success",
-            "data": {
-                "video_id": v_id,
-                "detection_result": {
-                    "avg_fake_score": round(avg_fake_score, 4),  # Fake로 판정된 프레임들의 평균 점수
-                    "avg_real_score": round(avg_real_score, 4),  # Real로 판정된 프레임들의 평균 점수
-                    "fake_frame_count": len(fake_scores),
-                    "real_frame_count": len(real_scores),
-                    "total_analyzed_frames": analyzed_frames
-                }
-            }
-        })
+#         return jsonify({
+#             "status": "success",
+#             "data": {
+#                 "video_id": v_id,
+#                 "detection_result": {
+#                     "avg_fake_score": round(avg_fake_score, 4),  # Fake로 판정된 프레임들의 평균 점수
+#                     "avg_real_score": round(avg_real_score, 4),  # Real로 판정된 프레임들의 평균 점수
+#                     "fake_frame_count": len(fake_scores),
+#                     "real_frame_count": len(real_scores),
+#                     "total_analyzed_frames": analyzed_frames
+#                 }
+#             }
+#         })
 
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({"status": "error", "message": str(e)}), 500
+#     except Exception as e:
+#         import traceback
+#         print(traceback.format_exc())
+#         return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # ==========================================
@@ -205,17 +205,21 @@ def detect_deepfake_with_gemini_25():
     
     try:
         v_id = get_video_id(url)
-        res = collect_and_split_data(get_or_save_api_key(), url, v_id)
+        res = collect_and_split_data(os.getenv("YT_SHORTS_API_KEY"), url, v_id)
         _, storage_path = get_safe_metadata(res)
         
         video_path = os.path.join(storage_path, "video.mp4")
+        print("[/api/video/detect] video_path: ", video_path)
         if not os.path.exists(video_path):
             for f in os.listdir(storage_path):
                 if f.endswith((".mp4", ".webm")):
                     video_path = os.path.join(storage_path, f)
                     break
         
-        ai_val, human_val = video.analyze_with_gemini_25(video_path)
+        result = video.analyze_with_gemini_25(video_path)
+        if result is None:
+            return jsonify({"status": "error", "message": "분석 실패"}), 500
+        ai_val, human_val = result
 
         return jsonify({
             "status": "success",
