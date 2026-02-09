@@ -90,9 +90,9 @@ Invoke-RestMethod -Uri "http://localhost:5173/api/video/info" `
 
 #### macOS / Linux
 ```bash
-curl -X POST http://localhost:5173/api/video/detect \
+curl -X POST http://52.79.88.52/api/video/detect \
      -H "Content-Type: application/json" \
-     -d '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}'
+     -d '{"url": "https://www.youtube.com/watch?v=vZ4qxeRFiVE"}'
 ```
 
 #### Windows (PowerShell)
@@ -108,7 +108,7 @@ Invoke-RestMethod -Uri "http://localhost:5173/api/video/detect" `
 
 #### macOS / Linux
 ```bash
-curl -X POST http://localhost:5173/api/video/analyze \
+curl -X POST http://52.79.88.52/api/video/analyze \
      -H "Content-Type: application/json" \
      -d '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}'
 ```

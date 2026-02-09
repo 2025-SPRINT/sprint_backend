@@ -419,18 +419,48 @@ def analyze_video():
 from youtube_transcript_api.formatters import TextFormatter
 
 def get_youtube_transcript2(video_url, languages=['ko', 'en']):
+    print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
     from yt_shorts import get_video_id
     video_id = get_video_id(video_url) # 다양한 URL 지원
-    if not video_id: return None
+    print(f"[DEBUG] Extracted Video ID: {video_id}")
+    
+    if not video_id: 
+        print("[DEBUG] Failed to extract Video ID.")
+        return None
 
     try:
-        ytt_api = YouTubeTranscriptApi()
-        transcript = ytt_api.fetch(video_id, languages=languages)
+        # [DEBUG] 자막 불러오기 시도
+        print(f"[DEBUG] Attempting to fetch transcript for {video_id} with languages={languages}")
         
+        # 혹시 모를 로직 에러 확인을 위해 단계별 프린트
+        # 만약 YouTubeTranscriptApi 자체가 static method만 지원한다면 여기서 터질 수 있음
+        # ytt_api = YouTubeTranscriptApi() -> 이 부분 확인 필요
+        
+        # 1. 표준적인 방법 (static method) 시도
+        try:
+            print("[DEBUG] Trying YouTubeTranscriptApi.get_transcript (Static Method)...")
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+            print("[DEBUG] Success with static method.")
+        except Exception as e_static:
+            print(f"[DEBUG] Static method failed: {e_static}")
+            print("[DEBUG] Trying original user code (Instance Method)...")
+            
+            # 2. 기존 유저 코드 (Instance Method)
+            ytt_api = YouTubeTranscriptApi()
+            transcript = ytt_api.fetch(video_id, languages=languages)
+            print("[DEBUG] Success with instance method.")
+
         # 순수 텍스트로 변환하여 Gemini 분석에 최적화
+        print("[DEBUG] Formatting transcript...")
         formatter = TextFormatter()
-        return formatter.format_transcript(transcript).strip()
-    except Exception:
+        formatted_text = formatter.format_transcript(transcript).strip()
+        print(f"[DEBUG] Formatted text length: {len(formatted_text)}")
+        return formatted_text
+
+    except Exception as e:
+        print(f"❌ [ERROR] get_youtube_transcript2 failed: {e}")
+        import traceback
+        print(traceback.format_exc())
         return None
 
 ############## 건드리지 말 것 ##############
