@@ -326,7 +326,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
-from gemini_main import main as gemini_analyze, PROMPT_1
+from gemini_main import main as gemini_analyze, PROMPT
 
 @app.route('/api/video/analyze', methods=['POST'])
 @trace("Route: Analyze YouTube (Script-based Analysis)")
@@ -343,7 +343,7 @@ def analyze_video():
         }), 400
 
     video_url = data.get('url')
-    custom_prompt = data.get('prompt', PROMPT_1)    # 사용자 정의 프롬프트 혹은 기본값
+    custom_prompt = data.get('prompt', PROMPT)    # 사용자 정의 프롬프트 혹은 기본값
     
     # 1. YouTube Video ID 추출
     try:
