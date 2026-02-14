@@ -173,7 +173,7 @@ def detect_deepfake():
         
         client = genai.Client(api_key=os.getenv("API_KEY"))
 
-            while True:
+        while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
