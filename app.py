@@ -328,6 +328,34 @@ from youtube_transcript_api.formatters import TextFormatter
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
 from gemini_main import main as gemini_analyze, PROMPT
 
+@app.route('/api/video/transcript', methods=['POST'])
+@trace("Route: Get Transcript")
+def get_transcript():
+    """
+    유튜브 URL을 입력받아 자막을 추출
+    API 명세: POST /api/video/transcript
+    """
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({
+            "status": "error",
+            "message": "Missing 'url' in request body"
+        }), 400
+
+    video_url = data.get('url')
+
+    script_text = get_youtube_transcript2(video_url)
+    if not script_text:
+        return jsonify({
+            "status": "error",
+            "message": "자막을 찾을 수 없습니다."
+        }), 404
+
+    return jsonify({
+        "status": "success",
+        "data": script_text
+    })
+
 @app.route('/api/video/analyze', methods=['POST'])
 @trace("Route: Analyze YouTube (Script-based Analysis)")
 def analyze_video():
@@ -368,19 +396,12 @@ def analyze_video():
         return jsonify({"status": "error", "message": "Invalid YouTube URL format"}), 400
 
     # 2. 자막 추출 (YouTubeTranscriptApi)
-    try:
-        script_text = get_youtube_transcript2(video_url)
-        if not script_text:
-            return jsonify({
-                "status": "error",
-                "message": "자막을 찾을 수 없습니다."
-            }), 404
-
-    except Exception as e:
+    script_text = get_youtube_transcript2(video_url)
+    if not script_text:
         return jsonify({
             "status": "error",
-            "message": f"자막을 가져오는데 실패했습니다: {str(e)}"
-        }), 500
+            "message": "자막을 찾을 수 없습니다."
+        }), 404
 
     # 3. Gemini 분석 (async 함수 호출)
     try:
