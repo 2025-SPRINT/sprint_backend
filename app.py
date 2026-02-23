@@ -26,6 +26,7 @@ def home():
     })
 # ========================================
 from flask import Flask, jsonify, request
+from site_analyzer import LinkTracer, BrandTrustAnalyzer
 import os
 import json
 # import cv2
@@ -47,6 +48,8 @@ def get_safe_metadata(result):
                 return json.load(f), result
         return {}, result
     return result, result.get("storage_path")
+
+
 
 # ==========================================
 # 2. [순호] 기본 영상 정보 조회 (Fast)
@@ -483,6 +486,55 @@ def get_youtube_transcript2(video_url, languages=['ko', 'en']):
         import traceback
         print(traceback.format_exc())
         return None
+    
+    # ==============사이트 분석 로직====================
+@app.route('/api/video/trace-trust', methods=['POST'])
+@trace("Route: Trace Link and Brand Trust")
+def trace_link_and_trust():
+    data = request.get_json()
+    url = data.get("url")
+    if not url:
+        return jsonify({"status": "error", "message": "URL 필요"}), 400
+
+    v_id = get_video_id(url)
+
+    # 1. DB 캐시 확인 (중복 분석 방지)
+    cached = db_handler.get_analysis_result(v_id)
+    if cached and "trust_report" in cached:
+        return jsonify({"status": "success", "data": cached["trust_report"], "cached": True})
+
+    try:
+
+        tracer = LinkTracer() 
+        
+        # Step 1: 영상 분석 및 구매 링크 추적
+        # (이 함수 내부에서 download -> analyze -> remove_temp 과정이 한 번에 일어납니다)
+        step1_res = tracer.analyze(url) 
+        final_link = step1_res.get('landing_page_url')
+
+        # Step 2: 구매 사이트 신뢰도 실사
+        step2_res = "유효 링크 없음"
+        if final_link and "http" in final_link:
+            analyzer = BrandTrustAnalyzer(tracer.client)
+            step2_res = analyzer.generate_trust_report(
+                target_url=final_link,
+                product_name=step1_res.get('product_name'),
+                brand=step1_res.get('brand')
+            )
+
+        final_report = {
+            "step1_video_discovery": step1_res,
+            "step2_deep_verification": step2_res
+        }
+
+        # 3. 결과 DB 저장 (Partial Update)
+        db_handler.save_analysis_result({"video_id": v_id, "trust_report": final_report})
+        
+        return jsonify({"status": "success", "data": final_report})
+
+    except Exception as e:
+        print(f"❌ [Error] {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 ############## 건드리지 말 것 ##############
 
