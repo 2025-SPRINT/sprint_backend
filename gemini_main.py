@@ -121,7 +121,7 @@ class GeminiDebugLogger:
         return path
 
 # PROMPT_1 with patent grounding instructions
-PROMPT_1 = """
+PROMPT = """
 1. 당신은 광고 신뢰성 분석의 전문가입니다. 사용자로부터 받은 광고의 스크립트를 분석하여 광고와 제품의 신뢰성을 평가합니다. 사용자는 유튜브 쇼츠에서 시청한 광고의 스크립트를 제공합니다. 평가한 결과를 사용자에게 전달해야 합니다.
 
 2. 광고 신뢰성 분석을 통해 광고가 과장되었는지, 사실에 기반했는지, 또는 오해의 소지가 있는지를 평가합니다. 
@@ -349,29 +349,7 @@ PROMPT_6 = """
 이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
 """
 
-# --- JSON Schemas ---
-class PatentCheck(TypedDict):
-    status: Literal["존재", "미확인", "허위", "해당 없음"]
-    details: str
-    patent_number: Optional[str]
-
-class EvidenceItem(TypedDict):
-    source: str
-    url: Optional[str]
-    fact: str
-
-class AdAnalysisResult(TypedDict):
-    reliability_level: Literal["안전", "주의", "위험", "정보 부족"]
-    summary: str
-    issues: List[str]
-    patent_check: PatentCheck
-    evidence: List[EvidenceItem]
-    consultation: str
-# --------------------
-
-SCRIPT = "아니, 아직도 안 믿으세요. 비문증 방치하면 실명이라니까요. 제가 김포에서 초등부 야구 감독으로 15년째인데요. 어느 날 연습 중에 애가 던진 공에 눈을 정통으로 맞은 거예요. 그때 치료 잘 받고 괜찮아졌다고 생각했는데 며칠 뒤부터 눈앞에 계속 날파리 같은게 떠다니는 거예요. 알고 보니 이게 눈 안에 무슨 유리채 찔꺼기가 뭉친 비문증이라요. 처음엔 시간 지나면 없어지겠지 했는데 경험 갔더니 실명 직전 남결합니다. 애들 가르치는 사람인데 실명이라니 순간 숨이 턱 막히더라고요. 그래서 제가 단원합니다. 이거 방치하면 막막 찢어지고 실명업입니다. 실명. 그런데 이거 먹고도 그대로면 제가 전재산 드리겠습니다. 딱 일주일만 먹어 보세요. 이건 진짜 국내 최초로 유일하게 비문개 선택을 받은 비문증 치료제예요. 다른 거랑은 비교도 하지 마세요. 하루에 한 번만 챙겨 드세요. 얼마나 편해요?이 좋은 걸 꾸준히 먹기만 하면 실명을 안 한다는데. 그리고 지금 아니면 고압량 제고는 구하지도 못해요. 3일루 후에 고압량 제거 단종된다고 공식 발표는 미루면 진짜 끝납니다."
-
-PROMPT_6 = """
+PROMPT_7 = """
 # Role
 당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한** 분석 리포트를 제공하는 것입니다.
 
@@ -413,7 +391,11 @@ PROMPT_6 = """
 
 # Context
 이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
-"""
+"""                                                                               
+
+PROMPT = PROMPT_7
+
+SCRIPT = "아니, 아직도 안 믿으세요. 비문증 방치하면 실명이라니까요. 제가 김포에서 초등부 야구 감독으로 15년째인데요. 어느 날 연습 중에 애가 던진 공에 눈을 정통으로 맞은 거예요. 그때 치료 잘 받고 괜찮아졌다고 생각했는데 며칠 뒤부터 눈앞에 계속 날파리 같은게 떠다니는 거예요. 알고 보니 이게 눈 안에 무슨 유리채 찔꺼기가 뭉친 비문증이라요. 처음엔 시간 지나면 없어지겠지 했는데 경험 갔더니 실명 직전 남결합니다. 애들 가르치는 사람인데 실명이라니 순간 숨이 턱 막히더라고요. 그래서 제가 단원합니다. 이거 방치하면 막막 찢어지고 실명업입니다. 실명. 그런데 이거 먹고도 그대로면 제가 전재산 드리겠습니다. 딱 일주일만 먹어 보세요. 이건 진짜 국내 최초로 유일하게 비문개 선택을 받은 비문증 치료제예요. 다른 거랑은 비교도 하지 마세요. 하루에 한 번만 챙겨 드세요. 얼마나 편해요?이 좋은 걸 꾸준히 먹기만 하면 실명을 안 한다는데. 그리고 지금 아니면 고압량 제고는 구하지도 못해요. 3일루 후에 고압량 제거 단종된다고 공식 발표는 미루면 진짜 끝납니다."
 
 # --- JSON Schemas ---
 class PatentCheck(TypedDict):
@@ -452,7 +434,7 @@ async def main(prompt, script):
     # Attempting to combine both into a single Tool object to avoid compatibility issues
     
     if USE_JSON_OUTPUT:
-        target_prompt = PROMPT_6
+        target_prompt = PROMPT
         # Configure for JSON output
         config = types.GenerateContentConfig(
             tools=[
@@ -589,7 +571,7 @@ async def main(prompt, script):
         debug_path = logger.save()
         print(f"\n[Debug] 상세 API 호출 흐름이 저장되었습니다: {debug_path}")
 
-        save_response_to_file(total_usage, PROMPT_1, text_with_citations)
+        save_response_to_file(total_usage, PROMPT, text_with_citations)
 
         return final_text
     finally:

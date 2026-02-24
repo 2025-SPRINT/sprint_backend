@@ -57,51 +57,75 @@ python app.py
 uv run app.py
 ```
 
-서버가 실행되면 기본적으로 `http://localhost:8080`에서 접속 가능합니다.
+서버가 실행되면 기본적으로 `http://localhost:5173`에서 접속 가능합니다.
 
-- `POST /analyze`: Gemini 기반 스크립트 분석
-- `POST /extract`: 유튜브 영상 추출 및 AI 광고 탐지 통합 (NPR 포함)
-- `POST /analyze-youtube`: 유튜브 자막 자동 추출 및 Gemini 분석 통합
+- `POST /api/video/info`: 유튜브 영상 기본 정보 조회 (Metadata)
+- `POST /api/video/detect`: 딥페이크(NPR) 및 Gemini 영상 분석 통합
+- `POST /api/video/analyze`: 유튜브 자막 기반 Gemini 심층 분석
 
 ## API 테스트 가이드 (CURL)
 
-서버가 실행 중인 상태(`http://localhost:8080`)에서 다음 명령어로 기능을 테스트할 수 있습니다.
+서버가 실행 중인 상태(`http://localhost:5173`)에서 다음 명령어로 기능을 테스트할 수 있습니다.
 
-### 1. 유튜브 데이터 추출 및 AI 탐지 (/extract)
-유튜브 URL을 입력받아 영상을 다운로드하고, 딥페이크 여부(NPR)를 분석한 뒤 통합 결과를 반환합니다.
+### 1. 유튜브 영상 기본 정보 조회 (/api/video/info)
+영상 다운로드 없이 메타데이터(제목, 조회수, 썸네일 등)만 빠르게 조회합니다.
 
 #### macOS / Linux
 ```bash
-curl -X POST http://localhost:8080/extract \
+curl -X POST http://localhost:5173/api/video/info \
      -H "Content-Type: application/json" \
      -d '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}'
 ```
 
 #### Windows (PowerShell)
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8080/extract" `
+Invoke-RestMethod -Uri "http://localhost:5173/api/video/info" `
     -Method Post `
     -ContentType "application/json" `
     -Body '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}' | ConvertTo-Json -Depth 10
 ```
 
-### 2. 유튜브 자막 추출 및 Gemini 분석 (/analyze-youtube)
-유튜브 자막을 자동으로 가져와 Gemini API를 통해 광고 신뢰성을 분석합니다.
+### 2. 딥페이크 탐지 및 영상 분석 (/api/video/detect)
+영상을 다운로드하여 NPR 모델 및 Gemini 2.5 Flash를 통해 AI 생성 여부(Deepfake)를 분석합니다.
 
 #### macOS / Linux
 ```bash
-curl -X POST http://localhost:8080/analyze-youtube \
+curl -X POST http://52.79.88.52/api/video/detect \
      -H "Content-Type: application/json" \
-     -d '{"video_url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}'
+     -d '{"url": "https://www.youtube.com/watch?v=vZ4qxeRFiVE"}'
+```
+
+#### Windows (PowerShell)
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5173/api/video/detect" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}' | ConvertTo-Json -Depth 10
+```
+
+### 3. 자막 기반 심층 분석 (/api/video/analyze)
+유튜브 자막을 자동으로 추출하고 Gemini를 통해 내용을 분석합니다.
+
+#### macOS / Linux
+```bash
+curl -X POST https://uncloistral-pseudoheroical-milena.ngrok-free.dev/api/video/analyze \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://www.youtube.com/watch?v=BIdt96fKM-o"}'
+```
+
+```bash
+curl -X POST https://localhost:5173/api/video/transcript \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://www.youtube.com/watch?v=BIdt96fKM-o"}'
 ```
 
 #### Windows (PowerShell)
 ```powershell
 # | ConvertTo-Json을 붙이면 생략되는 내용 없이 전체 JSON을 볼 수 있습니다.
-Invoke-RestMethod -Uri "http://localhost:8080/analyze-youtube" `
+Invoke-RestMethod -Uri "http://localhost:5173/api/video/analyze" `
     -Method Post `
     -ContentType "application/json" `
-    -Body '{"video_url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}' | ConvertTo-Json -Depth 10
+    -Body '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}' | ConvertTo-Json -Depth 10
 ```
 
 > [!TIP]
