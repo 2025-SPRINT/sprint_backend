@@ -390,7 +390,7 @@ PROMPT_7 = """
 - `consultation`: **1-2문장**으로 핵심 조언만 제공. 장황한 설명 금지.
 
 # Context
-이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트입니다. 위 지침을 준수하여 분석하십시오.
+이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트와 랜딩페이지의 상세 정보입니다. 위 지침을 준수하여 분석하십시오.
 """                                                                               
 
 PROMPT = PROMPT_7
@@ -446,7 +446,7 @@ async def main(prompt, script):
             response_mime_type="application/json",
             response_schema=AdAnalysisResult
         )
-        print("모드: JSON 구조화 출력 (PROMPT_6)")
+        print("모드: JSON 구조화 출력 (PROMPT_7)")
     else:
         target_prompt = PROMPT_5
         # Original configuration
@@ -617,6 +617,18 @@ def save_response_to_file(token_usage, prompt_text, response_text, folder_path="
     with open(new_file_path, "w", encoding="utf-8") as file:
         file.write(text)
     print(f"Response saved to {new_file_path}")
+
+@trace("Final Combined Analysis")
+async def evaluate_with_site_info(script_content, site_details):
+
+    combined_input = f"""
+[광고 스크립트 내용]
+{script_content}
+
+[웹사이트 분석 상세 내용 (site_details)]
+{json.dumps(site_details, indent=2, ensure_ascii=False)}
+"""
+    return await main(PROMPT_7, combined_input)
 
 if __name__ == "__main__":
     print("Start main")

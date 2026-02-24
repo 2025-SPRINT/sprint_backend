@@ -15,7 +15,7 @@ load_dotenv()
 
 class LinkTracer:
     def __init__(self):
-        self.gemini_key = os.getenv('api_key_grounding')
+        self.gemini_key = os.getenv('API_KEY')
         self.youtube_api_key = os.getenv('Youtube_API_Key') or os.getenv('YT_SHORTS_API_KEY')
         
         if not self.gemini_key:
@@ -79,7 +79,7 @@ class LinkTracer:
 
             [분석 지침]
             1. 의도 파악: 브랜드명과 제품명을 정확히 식별하세요.
-            2. 후보지 탐색: 구글 검색을 활용하여 자사몰 상세페이지, 네이버 스마트스토어, 쿠팡 등 '모든 가능한 구매 경로'를 후보 리스트에 담으세요.
+            2. 후보지 탐색: 구글 검색을 활용하여 자사몰 상세페이지, 자사몰 공식페이지, 네이버 스마트스토어, 쿠팡 등 '모든 가능한 구매 경로'를 후보 리스트에 담으세요.
             3. 우선순위: 독립 자사몰(.co.kr, .com)의 상세 페이지를 리스트 최상단에 배치하세요.
             4. 반드시 'landing_page_candidates'라는 키에 URL 리스트를 담아 JSON으로 응답하세요.
 
