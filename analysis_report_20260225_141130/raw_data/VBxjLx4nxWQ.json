@@ -1,0 +1,68 @@
+{
+    "analysis_result": {
+        "consultation": "반복적인 가격 할인 연출에 현혹되지 마시고, 실제 구성 중량 대비 가격의 적정성을 타사 반건시 세트와 비교하여 구매하시기 바랍니다.",
+        "evidence": [
+            {
+                "fact": "'서브마켓' 또는 해당 기술로 등록된 고유 특허는 확인되지 않으며, 감압건조는 일반적인 식품 건조 방식 중 하나입니다.",
+                "source": "KIPRIS 특허 검색",
+                "url": null
+            },
+            {
+                "fact": "높은 가격을 먼저 제시한 후 즉석에서 할인해주는 척하는 행위는 소비자의 합리적 판단을 방해하는 전형적인 가격 앵커링 기법입니다.",
+                "source": "공정거래위원회 다크패턴 가이드라인",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[가격앵커링] 가격을 단계적으로 깎는 연출",
+            "[동질성호소] 판매자 개인의 선물 사례 인용",
+            "[기술적압박] 감압건조 기술을 고가 이유로 제시"
+        ],
+        "patent_check": null,
+        "reliability_level": "주의",
+        "summary": "가격 앵커링 기법과 개인적 친밀감 호소를 통한 심리적 구매 유도로 인해 주의 등급입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "서브마켓",
+            "evidence": "The brand '서브마켓' (Serve Market) is identified from the description's hashtag '#믿고먹는서브마켓' and the direct purchase link 'https://www.servemarket.kr/s7wDIxv'. The product name '프리미엄 반건시 선물세트' (Premium Semi-dried Persimmon Gift Set) is explicitly mentioned in the video's text overlays at 0:05 and 0:49, and in the video description. The primary landing page 'https://www.servemarket.kr/s7wDIxv' is provided directly in the video description. Further Google searches for '서브마켓' led to the main website 'https://www.servemarket.kr/' and a category page for '반건시' (semi-dried persimmon) on the same domain, 'https://www.servemarket.kr/goods/goods_list.php?cateCd=001007'.",
+            "landing_page_candidates": [
+                "https://www.servemarket.kr/s7wDIxv",
+                "https://www.servemarket.kr/",
+                "https://www.servemarket.kr/goods/goods_list.php?cateCd=001007"
+            ],
+            "landing_page_url": "https://www.servemarket.kr/s7wDIxv",
+            "product_name": "프리미엄 반건시 선물세트",
+            "search_queries_used": [
+                "서브마켓",
+                "서브마켓 프리미엄 반건시 선물세트",
+                "servemarket.kr 반건시"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "Servemarket 선물세트/상품 페이지",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": false,
+                    "manufacturer_info": "페이지 내 근거 확인 불가",
+                    "review_analysis": {
+                        "negative": [
+                            "페이지 내 근거 확인 불가"
+                        ],
+                        "positive": [
+                            "페이지 내 근거 확인 불가"
+                        ]
+                    },
+                    "trust_indicators": [
+                        "페이지 내 근거 확인 불가"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "VBxjLx4nxWQ"
+}

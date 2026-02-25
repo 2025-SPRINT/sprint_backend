@@ -1,0 +1,74 @@
+{
+    "analysis_result": {
+        "consultation": "무료 보상은 게임 내 특정 조건 달성이 필요할 수 있으므로 설치 전 상세 약관을 확인하십시오.",
+        "evidence": [
+            {
+                "fact": "Archosaur Games가 개발한 실존 게임이나, '1000만 유저' 수치는 객관적으로 확인되지 않은 마케팅용 수치입니다.",
+                "source": "구글 플레이 스토어",
+                "url": "https://play.google.com/store/apps/details?id=com.archosaur.dx.awaken"
+            },
+            {
+                "fact": "'이 빗자 못쳐라' 등 부자연스러운 비문이 발견되며, 이는 해외 게임사 광고에서 흔히 나타나는 번역 품질 미흡 사례입니다.",
+                "source": "광고 스크립트",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[사회적승인] 1천만 유저 근거 미비",
+            "[이득제안] 과도한 무료 보상 강조",
+            "[언어결함] 스크립트 내 비문 포함"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "[사회적 승인 조작] 및 [언어적 결함]이 발견되나, 실존 게임의 통상적인 홍보 방식입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "DX",
+            "evidence": "영상 0:17-0:19초에 'DX: 각성자들'이라는 게임의 로고와 함께 '전 세계 1000만 유저 집결 중! 400연 뽑기 1000다이아 무료!'라는 문구가 명확하게 나타나 브랜드와 제품명을 식별할 수 있었습니다. 또한 영상 마지막에는 Google Play 및 App Store 아이콘도 표시되어 모바일 게임임을 알 수 있었습니다. 구글 검색을 통해 'DX 각성자들 공식 사이트'와 'DX: 각성자들 - Apps on Google Play', 'DX: 각성자들 앱 - App Store'가 주요 유도 페이지 후보로 확인되었습니다. 특히 YouTube 링크에서 공식 웹사이트 주소 `https://dx-awaken.archosaur.com/`가 명시되어 있음을 확인했습니다.",
+            "landing_page_candidates": [
+                "https://dx-awaken.archosaur.com/",
+                "https://play.google.com/store/apps/details?id=com.archosaur.dx.awaken",
+                "https://apps.apple.com/kr/app/dx-%EA%B0%81%EC%84%B1%EC%9E%90%EB%93%A4/id6474136696"
+            ],
+            "landing_page_url": "https://dx-awaken.archosaur.com/",
+            "product_name": "DX: 각성자들",
+            "search_queries_used": [
+                "DX 각성자들",
+                "DX 각성자들 공식",
+                "DX 각성자들 게임",
+                "DX Awakened Ones",
+                "DX 각성자들 google play"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "DX: 각성자들",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "개발사: Archosaur Games",
+                    "review_analysis": {
+                        "negative": [
+                            "등록된 리뷰 없음"
+                        ],
+                        "positive": [
+                            "등록된 리뷰 없음"
+                        ]
+                    },
+                    "trust_indicators": [
+                        "연령: 12+세",
+                        "확률형 아이템 포함",
+                        "데이터 전송 중 암호화됨 (Data is encrypted in transit)",
+                        "데이터 삭제 요청 가능 (You can request that data be deleted)",
+                        "제3자와 데이터 공유 없음 (No data shared with third parties)"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "ho4jeQNssGA"
+}

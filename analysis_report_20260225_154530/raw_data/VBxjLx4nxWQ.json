@@ -1,0 +1,64 @@
+{
+    "analysis_result": {
+        "consultation": "제시된 할인가가 실제 시장가 대비 합리적인지 비교하시고, 제조 및 판매 주체가 불분명하므로 구매 전 신중을 기하십시오.",
+        "evidence": [
+            {
+                "fact": "59,000원에서 29,900원까지 즉석에서 가격을 낮추는 연출은 전형적인 사회공학적 이득 제안 기법입니다.",
+                "source": "광고 스크립트 및 영상",
+                "url": null
+            },
+            {
+                "fact": "페이지 내 제조사 정보 및 공식적인 사업자 신원 확인이 불가능하여 투명성이 결여되어 있습니다.",
+                "source": "랜딩 페이지 분석 (site_details)",
+                "url": "https://www.servemarket.kr/s7wDIxv"
+            }
+        ],
+        "issues": [
+            "[심리조작] 가격 협상 연출로 과도한 이득 암시",
+            "[직접화법] 개인적 사례를 이용한 신뢰 관계 형성",
+            "[정보은폐] 판매 페이지 내 사업자 및 제조 정보 부재"
+        ],
+        "patent_check": null,
+        "reliability_level": "주의",
+        "risk_score": "55",
+        "summary": "상황극을 통한 가격 인하 연출과 판매자의 개인적 경험 강조 등 심리적 조작 기법이 확인되어 주의가 필요합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "서브마켓 (Serve Market)",
+            "evidence": "영상에서는 '프리미엄 반건시 선물세트'라는 문구가 여러 차례 등장하며, 제품의 특징(감압 건조, 쫄깃하고 촉촉함, 쓴맛 없음)을 설명합니다. 영상 마지막에는 '믿고 먹는 서브마켓'이라는 문구가 나타납니다. 메타데이터의 제목과 설명에서도 '반건시 선물세트'와 '프리미엄 반건시'가 명시되어 있으며, '믿고 먹는 서브마켓 #과일왕송사장'이라는 해시태그와 함께 '서브마켓'이 브랜드명으로 언급됩니다. 메타데이터에 직접적인 구매 링크(https://www.servemarket.kr/s7wDIxv)가 제공되어 이를 첫 번째 후보로 선정했습니다. 구글 검색 결과, 'servemarket.kr'이 서브마켓의 공식 온라인 쇼핑몰임을 확인했으며, 해당 사이트 내에서 '달콤한 청도 반건시 전통 간식추천 홍시 기업체선물 감압건조 20구 24구'와 같은 반건시 제품 상세 페이지를 찾을 수 있었습니다. 또한, 서브마켓의 메인 페이지(https://servemarket.kr/)도 제품 구매로 이어질 수 있는 유효한 랜딩 페이지 후보로 판단했습니다.",
+            "landing_page_candidates": [
+                "https://www.servemarket.kr/s7wDIxv",
+                "https://servemarket.kr/product/%EB%8B%AC%EC%BD%A4%ED%95%9C-%EC%B2%AD%EB%8F%84-%EB%B0%98%EA%B1%B4%EC%8B%9C-%EC%A0%84%ED%86%B5-%EA%B0%84%EC%8B%9D%EC%B6%94%EC%B2%9C-%ED%99%8D%EC%8B%9C-%EA%B8%B0%EC%97%85%EC%B2%B4%EC%84%A0%EB%AC%BC-%EA%B0%90%EC%95%95%EA%B1%B4%EC%A1%B0-20%EA%B5%AC-24%EA%B5%AC/106/category/24/display/1/",
+                "https://servemarket.kr/"
+            ],
+            "landing_page_url": "https://www.servemarket.kr/s7wDIxv",
+            "product_name": "프리미엄 반건시 선물세트",
+            "search_queries_used": [
+                "서브마켓 반건시",
+                "서브마켓 프리미엄 반건시 선물세트",
+                "servemarket.kr",
+                "과일왕송사장 반건시"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "청도골드곶감 프리미엄 반건시 선물세트",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "페이지 내 근거 확인 불가",
+                    "review_analysis": {
+                        "negative": [],
+                        "positive": []
+                    },
+                    "trust_indicators": []
+                }
+            }
+        }
+    },
+    "video_id": "VBxjLx4nxWQ"
+}

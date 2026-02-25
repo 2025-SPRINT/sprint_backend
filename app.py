@@ -363,7 +363,7 @@ def get_transcript():
 import asyncio
 
 @app.route('/api/video/analyze', methods=['POST'])
-@trace("Route: Integrated Video & Site Analysis (Parallel)")
+@trace("Route: Integrated Video & Site Analysis (Fail-safe)")
 def analyze_video():
     data = request.get_json()
     if not data or 'url' not in data:
@@ -372,18 +372,15 @@ def analyze_video():
     video_url = data.get('url')
     video_id = get_video_id(video_url)
 
-    # 비동기 처리를 위한 내부 함수 정의
     async def run_analysis():
-        
-        # 워커 생성
         task_transcript = asyncio.to_thread(get_youtube_transcript2, video_url)
         task_site_trace = asyncio.to_thread(run_site_verification, video_url)
 
-        # 둘 다 끝날 때까지 기다림 (병렬 실행)
         script_text, trust_report = await asyncio.gather(task_transcript, task_site_trace)
         
+
         if not script_text:
-            return None, "자막 추출 실패"
+            script_text = "이 영상은 자막을 제공하지 않습니다. 웹사이트 정보와 브랜드명을 기반으로 분석하세요."
 
         # 2. 통합 정보를 Gemini에게 전달
         from gemini_main import evaluate_with_site_info
@@ -392,20 +389,18 @@ def analyze_video():
         return (script_text, trust_report, report), None
 
     try:
-        # 비동기 루프 실행
         result, error = asyncio.run(run_analysis())
         
-        if error:
-            return jsonify({"status": "error", "message": error}), 404
-        
+        # 이제 error는 네트워크 치명적 오류가 아닌 이상 발생하지 않습니다.
         script_text, trust_report, report = result
 
         try:
-            analysis_result = json.loads(report)
+            # Gemini 응답이 문자열일 경우 JSON 파싱
+            analysis_result = json.loads(report) if isinstance(report, str) else report
         except:
             analysis_result = report
 
-        # DB 저장 시도 (백그라운드 에러 방지)
+        # DB 저장 시도
         try:
             db_handler.save_analysis_result({
                 "video_id": video_id,

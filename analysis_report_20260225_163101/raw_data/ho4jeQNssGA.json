@@ -1,0 +1,76 @@
+{
+    "analysis_result": {
+        "consultation": "과도한 무료 뽑기 혜택은 사행성을 조장하거나 추가 결제를 유도할 수 있습니다. 공식 스토어의 실제 리뷰를 반드시 확인하십시오.",
+        "evidence": [
+            {
+                "fact": "'1.2억 청춘', '1000만 유저' 등 객관적 근거를 확인하기 어려운 대규모 수치를 사용하여 사회적 승인을 조작함.",
+                "source": "광고 스크립트 및 랜딩페이지",
+                "url": "https://dx-awaken.archosaur.com/"
+            },
+            {
+                "fact": "'이 빗자 못쳐라' 등 문법적으로 어색한 비문이 발견되어 해외 서비스의 단순 번역물로 의심됨.",
+                "source": "광고 영상 분석",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[수치과장] 1.2억 명 이용 등 근거 부족",
+            "[언어결함] 번역투 및 비문 포함",
+            "[정보은폐] 무료 혜택의 세부 조건 미비"
+        ],
+        "patent_check": null,
+        "reliability_level": "주의",
+        "risk_score": "40",
+        "summary": "검증 불가능한 대규모 수치 제시 및 어색한 번역투 문구 사용으로 인한 주의 등급입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "DX: 각성자들",
+            "evidence": "영상 파일의 0:16-0:19초 구간에서 'DX: 각성자들'이라는 브랜드 로고와 함께 '전 세계 1000만 유저 집결 중! 400연 뽑기! 1000다이아 무료!' 및 'DX: 각성자들 지금 바로 플레이하세요.'라는 문구가 명확하게 표시됩니다. 또한, Google Play 및 App Store 아이콘이 함께 나타나 모바일 게임임을 알 수 있습니다. 채널명도 'DX: 각성자들'로 동일합니다.\n\n검색 결과에서 'DX: 각성자들 공식 사이트'와 'DX: 각성자들 - Apps on Google Play', 'DX: 각성자들 앱 - App Store' 페이지가 확인되었으며, 이들은 게임의 사전예약 및 다운로드로 이어지는 최정점의 구매 페이지로 판단됩니다. 뉴스 기사 및 커뮤니티 게시글은 제외했습니다.",
+            "landing_page_candidates": [
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQECglVESKihC8eYWQJ50pk4jg3l76z4UawzPJvoxSJbmyiK1Yc4dmTcKGLYfaPMvZ2Iv9o9ecDeK1-7JxlfHICKESrRr4waDyJ2usUuCn8umtIHu288hidGEpzB",
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGlQNMReS16npnmMmTgtAtfdva39wvpehyZvGkTALXROkGyWWUAquVfTXPPn0K7defwXLWDtKhJC7uQ0PsIWRF43rwTehDsXKG_zQjedqw_CNIAe2DA_3sDHLoIMok_1sixtT7d_exHG_E2sJ-mKOba1YjQIQ1FGxM8XRkC99BE",
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEceyrep_jH0lmi18EaNFv_AGTNnxUN9wvdmCsgPMZ7K_oYV4uaGZhSvNaM7M9tecGpkEepOCxccq_KOv28RcZM1Vg-do3bGX5OC-P8k-bNlMt7NW8rmmCwgP-5QkarYbn81FCb3aoJQhaqHjt6LZQnmCU8lIJCQRZ4KWbOHDJxrRwdc09qU0Pqq8R0SJA"
+            ],
+            "landing_page_url": "https://dx-awaken.archosaur.com/",
+            "product_name": "DX: 각성자들 (모바일 게임)",
+            "search_queries_used": [
+                "DX 각성자들",
+                "DX 각성자들 공식 홈페이지",
+                "DX 각성자들 구글 플레이",
+                "DX 각성자들 앱스토어"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "DX: 각성자들 (모바일 게임)",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": {
+                    "address": null,
+                    "business_number": null,
+                    "company_name": null
+                },
+                "official_claims": {
+                    "certifications": null,
+                    "patents": null,
+                    "tech_evidence": null
+                },
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "Archosaur Games (개발/배급)",
+                    "review_analysis": {
+                        "negative": "등록된 리뷰 없음",
+                        "positive": "등록된 리뷰 없음"
+                    },
+                    "trust_indicators": [
+                        "홍콩, 대만, 동남아시아 지역 사전 출시 기간 동안 주요 앱 스토어에서 1위 기록",
+                        "글로벌 1.2억 청춘이 선택한 심도 있는 이야기",
+                        "고사양 그래픽과 풀 보이스를 갖춘 판타지 세계"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "ho4jeQNssGA"
+}

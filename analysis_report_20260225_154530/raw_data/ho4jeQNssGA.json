@@ -1,0 +1,75 @@
+{
+    "analysis_result": {
+        "consultation": "무료 보상은 대개 특정 레벨 달성 등 복잡한 조건이 수반되므로 설치 전 상세 약관 확인이 필요합니다.",
+        "evidence": [
+            {
+                "fact": "'전 세계 1000만 유저' 수치는 구체적인 산출 근거가 제시되지 않은 마케팅용 문구입니다.",
+                "source": "공식 스토어 및 광고 모니터링",
+                "url": "https://play.google.com/store/apps/details?id=com.archosaur.kr.dxawaken"
+            },
+            {
+                "fact": "'이 빗자 못쳐라'와 같은 비문은 해외 게임의 한국 진출 시 발생하는 전형적인 번역 오류입니다.",
+                "source": "광고 스크립트 분석",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[사회적승인: 1000만 명 근거 미제시]",
+            "[이득제안: 400연 뽑기 조건 은폐]",
+            "[언어적결함: 어색한 번역투 문장]"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "35",
+        "summary": "미검증 수치와 번역 오류가 포함된 전형적인 게임 광고로, 과도한 보상 제안에 주의가 필요합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Archosaur Games",
+            "evidence": "영상 0:16-0:19초에 'DX: 각성자들'이라는 게임 제목과 함께 '전 세계 1000만 유저 집결 중! 400연 뽑기 1000다이아 무료!'라는 문구가 명확하게 표시되어 모바일 게임임을 알 수 있습니다. 검색 결과에 따르면 'DX: 각성자들'은 Archosaur Games에서 개발한 전략 RPG 게임입니다. 공식 웹사이트(https://www.dxawaken.com/kr/)는 'DX: 각성자들 공식 사이트'라는 제목으로 검색되었으며, Apple App Store 링크(https://apps.apple.com/kr/app/dx-%EA%B0%81%EC%84%B1%EC%9E%90%EB%93%A4/id6474130496)도 확인되었습니다. Google Play Store 한국 버전 링크(https://play.google.com/store/apps/details?id=com.archosaur.kr.dxawaken)는 여러 지역의 Google Play 링크에서 공통된 패키지 이름을 통해 확인되었습니다. 또한, 네이버 게임 라운지(https://game.naver.com/lounge/dx_awaken/home)는 게임의 공식 커뮤니티로 여러 검색 결과에서 언급되었습니다.",
+            "landing_page_candidates": [
+                "https://www.dxawaken.com/kr/",
+                "https://apps.apple.com/kr/app/dx-%EA%B0%81%EC%84%B1%EC%9E%90%EB%93%A4/id6474130496",
+                "https://play.google.com/store/apps/details?id=com.archosaur.kr.dxawaken",
+                "https://game.naver.com/lounge/dx_awaken/home"
+            ],
+            "landing_page_url": "https://game.naver.com/lounge/dx_awaken/home",
+            "product_name": "DX: 각성자들",
+            "search_queries_used": [
+                "DX 각성자들",
+                "DX 각성자들 게임",
+                "DX 각성자들 공식 카페",
+                "DX 각성자들 다운로드",
+                "DX 각성자들 공식 사이트",
+                "DX 각성자들 App Store",
+                "DX 각성자들 Google Play 한국",
+                "DX 각성자들 네이버 라운지"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "DX: 각성자들",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "페이지 내 근거 확인 불가",
+                    "review_analysis": {
+                        "negative": [
+                            "등록된 리뷰 없음"
+                        ],
+                        "positive": [
+                            "등록된 리뷰 없음"
+                        ]
+                    },
+                    "trust_indicators": [
+                        "해당 정보 없음"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "ho4jeQNssGA"
+}

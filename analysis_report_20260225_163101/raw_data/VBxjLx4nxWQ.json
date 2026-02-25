@@ -1,0 +1,68 @@
+{
+    "analysis_result": {
+        "consultation": "기술적 주장은 타당하며 실존하는 업체입니다. 다만 연출된 가격 인하 폭에 현혹되지 말고 최종 판매가를 타 플랫폼과 비교해 보십시오.",
+        "evidence": [
+            {
+                "fact": "감압 건조는 진공 상태에서 수분을 제거하여 풍미를 보존하는 실제 식품 건조 기술입니다.",
+                "source": "식품공학기술",
+                "url": null
+            },
+            {
+                "fact": "광고 주체인 서브마켓은 주식회사 번들즈가 운영하는 정상적인 농축산물 유통 플랫폼입니다.",
+                "source": "사업자 정보",
+                "url": "https://www.servemarket.kr"
+            }
+        ],
+        "issues": [
+            "[심리유도] 흥정 연출로 구매 욕구 자극",
+            "[직접화법] 판매자의 개인적 추천 강조"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "35",
+        "summary": "흥정 연출로 가격 혜택을 강조하나, 실제 기술에 기반한 정상적인 제품 광고입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "서브마켓 (Serve Market)",
+            "evidence": "영상에서 남성이 '프리미엄 반건시 선물세트'를 언급하고 시식하는 장면이 나오며, 채널명은 '해운대 공구왕 송사장'이다. 영상 설명에 명시된 구매 링크는 'https://www.servemarket.kr/s7wDIxv'이며, 해시태그에 '#믿고먹는서브마켓'이 포함되어 '서브마켓'이 브랜드임을 알 수 있다. 검색 결과 [2], [3], [4], [5], [6]의 여러 유튜브 영상들이 동일한 구매 링크를 사용하여 '프리미엄 반건시 선물세트'를 홍보하고 있음을 확인했다. [7]과 [8]은 '서브마켓'의 다른 페이지들이지만, 영상에서 직접 제공된 링크가 광고하는 특정 상품 및 캠페인과 가장 일치한다.",
+            "landing_page_candidates": [
+                "https://www.servemarket.kr/s7wDIxv"
+            ],
+            "landing_page_url": "https://www.servemarket.kr/s7wDIxv",
+            "product_name": "프리미엄 반건시 선물세트 (Premium Semi-Dried Persimmon Gift Set)",
+            "search_queries_used": [
+                "https://www.servemarket.kr/s7wDIxv",
+                "서브마켓 프리미엄 반건시 선물세트",
+                "서브마켓 반건시"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "서브마켓 (Servemarket)",
+            "site_details": {
+                "brand_identity": "서브마켓은 신선함과 맛, 가격을 기준으로 과일 중도매인이 직접 선별한 제철 과일, 농축수산물, 간편식, 건강식품 등을 공동구매 형식으로 제공하는 온라인 큐레이션 쇼핑 플랫폼입니다.",
+                "business_entity": {
+                    "address": "48058 부산 해운대구 센텀중앙로 97 (재송동, 센텀스카이비즈) B동 4층 405호",
+                    "business_number": "876-87-02750",
+                    "company_name": "주식회사 번들즈"
+                },
+                "official_claims": {
+                    "certifications": [],
+                    "patents": [],
+                    "tech_evidence": ""
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": {
+                        "negative": null,
+                        "positive": null
+                    },
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "VBxjLx4nxWQ"
+}

@@ -1,0 +1,73 @@
+{
+    "analysis_result": {
+        "consultation": "정식 출시된 게임의 홍보 영상입니다. 게임 내 유료 결제 요소(P2W)가 포함되어 있으므로 과도한 과금에 주의하여 이용하시기 바랍니다.",
+        "evidence": [
+            {
+                "fact": "Clash Royale은 핀란드 헬싱키 소재 Supercell이 개발 및 서비스하는 공식 모바일 게임입니다.",
+                "source": "Supercell 공식 웹사이트",
+                "url": "https://supercell.com/en/games/clashroyale/"
+            },
+            {
+                "fact": "공식 앱 마켓을 통해 전 세계에 서비스 중이며, 수억 회 이상의 다운로드를 기록한 검증된 앱입니다.",
+                "source": "Google Play 스토어",
+                "url": "https://play.google.com/store/apps/details?id=com.supercell.clashroyale"
+            }
+        ],
+        "issues": [
+            "[정상광고] 공식 스토어 등록 확인",
+            "[신원명확] 개발사 정보 투명하게 공개"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "글로벌 게임사 Supercell의 공식 제품 광고이며, 기만적 수법이 발견되지 않은 안전한 정보입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Clash Royale",
+            "evidence": "The video explicitly displays 'CLASH ROYALE' as the game title and brand at the 0:11 mark. The video also shows gameplay elements consistent with the Clash Royale mobile game. The metadata title 'CR.TooEasy.UA.EN.14s.9x16$CR0445-1.mp4' also contains 'CR', likely an abbreviation for Clash Royale. Search results confirm that Clash Royale is a mobile game developed by Supercell. The official website, Apple App Store, and Google Play Store pages are direct landing pages for downloading and learning more about the game.",
+            "landing_page_candidates": [
+                "https://clashroyale.com/en/",
+                "https://apps.apple.com/us/app/clash-royale/id1053012308",
+                "https://play.google.com/store/apps/details?id=com.supercell.clashroyale"
+            ],
+            "landing_page_url": "https://supercell.com/en/games/clashroyale/",
+            "product_name": "Clash Royale",
+            "search_queries_used": [
+                "Clash Royale",
+                "Clash Royale official website",
+                "Clash Royale game download",
+                "Clash Royale Google Play Store"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "Clash Royale",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "Supercell (개발사 및 퍼블리셔), 핀란드 헬싱키 기반",
+                    "review_analysis": {
+                        "negative": [
+                            "일명 '페이 투 윈(pay-to-win)' 게임으로 언급되며, 금전적 지출이 게임 진행 및 성공에 영향을 미친다는 비판을 받습니다.",
+                            "수익 창출 기법에 대한 비판이 제기되었습니다."
+                        ],
+                        "positive": [
+                            "매우 영리한 전략 게임으로, 모든 전투에서 신중하게 생각하고, 빠르게 반응하며, 공격과 방어를 동시에 균형 있게 유지해야 한다고 평가됩니다.",
+                            "깊이 있는 전략적 요소가 특징입니다.",
+                            "전략, 빠른 전투, 지속적인 업데이트의 조합으로 매 시즌마다 흥미진진함을 유지합니다.",
+                            "뛰어난 덱 빌딩 메커니즘과 빠르게 진행되는 전투가 이해하기 쉽고 부정할 수 없이 재미있다는 평가를 받습니다.",
+                            "카드 업그레이드, 잠금 해제 및 실험을 통해 무한한 반복 플레이가 가능하며, 영웅 배치 결정이 각 전투를 독특하게 만듭니다."
+                        ]
+                    },
+                    "trust_indicators": [
+                        "페이지 내 근거 확인 불가"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "SO-2qOni-J0"
+}

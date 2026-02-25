@@ -1,0 +1,62 @@
+{
+    "analysis_result": {
+        "consultation": "글로벌 공식 개발사의 정식 광고이므로 안심하고 시청 및 게임 이용이 가능합니다.",
+        "evidence": [
+            {
+                "fact": "클래시 로얄은 핀란드의 유명 게임 개발사 슈퍼셀(Supercell)이 서비스하는 글로벌 정식 모바일 게임입니다.",
+                "source": "Supercell 공식 웹사이트",
+                "url": "https://supercell.com/en/games/clashroyale/"
+            },
+            {
+                "fact": "광고의 랜딩 페이지가 공식 앱 마켓으로 연결되며, 수억 회 이상의 다운로드를 기록한 검증된 콘텐츠입니다.",
+                "source": "Google Play Store / Apple App Store",
+                "url": "https://apps.apple.com/us/app/clash-royale/id1053012308"
+            }
+        ],
+        "issues": [
+            "[신뢰확인] 공식 게임사 정식 홍보",
+            "[투명성] 앱스토어 직접 연결 제공"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "0",
+        "summary": "공식 브랜드의 실제 게임 플레이를 기반으로 한 광고이며, 기만적 요소가 발견되지 않은 안전한 광고입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Clash Royale",
+            "evidence": "The video prominently features gameplay from 'Clash Royale' and ends with a title card displaying 'CLASH ROYALE' and 'ALL FOR THE CROWN! PLAY NOW'. The channel name is also 'Clash Royale'. The search results confirm that 'Clash Royale' is a mobile game developed by Supercell. The official Supercell page for Clash Royale provides direct links to download the game from both the Apple App Store and Google Play Store, which are the primary platforms for playing the game as indicated by the 'PLAY NOW' call to action in the advertisement. The Apple App Store link and Google Play Store link (derived from the Supercell page) are direct download pages for the game.",
+            "landing_page_candidates": [
+                "https://supercell.com/en/games/clashroyale/",
+                "https://apps.apple.com/us/app/clash-royale/id1053012308",
+                "https://play.google.com/store/apps/details?id=com.supercell.clashroyale"
+            ],
+            "landing_page_url": "https://supercell.com/en/games/clashroyale/",
+            "product_name": "Clash Royale (mobile game)",
+            "search_queries_used": [
+                "Clash Royale official website",
+                "Clash Royale download",
+                "Clash Royale play now"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "Clash Royale (mobile game)",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "Supercell (핀란드 헬싱키 기반의 모바일 게임 개발사)",
+                    "review_analysis": {
+                        "negative": [],
+                        "positive": []
+                    },
+                    "trust_indicators": []
+                }
+            }
+        }
+    },
+    "video_id": "SO-2qOni-J0"
+}

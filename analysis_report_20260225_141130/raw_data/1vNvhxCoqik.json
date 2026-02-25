@@ -1,0 +1,72 @@
+{
+    "analysis_result": {
+        "consultation": "글로벌 기업의 공식 서비스 광고로 허위·과장 광고 요소가 없습니다. 본인의 필요에 따라 구독 여부를 결정하십시오.",
+        "evidence": [
+            {
+                "fact": "Google AI Pro 구독 서비스의 월 이용료(29,000원)와 Gemini Pro 기능을 공식적으로 안내하고 있습니다.",
+                "source": "Google 공식 유튜브 채널 및 요금제 페이지",
+                "url": "https://one.google.com/intl/ko_KR/ai-plans"
+            },
+            {
+                "fact": "100만 토큰 컨텍스트 창 등 광고 내 기술적 주장이 공식 기술 문서와 일치합니다.",
+                "source": "Google Gemini 기술 사양",
+                "url": "https://gemini.google.com/"
+            }
+        ],
+        "issues": [
+            "[신뢰성] 구글 공식 채널 확인",
+            "[투명성] 월 구독료 명시",
+            "[정보] 기술적 사양 상세 공개"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "기만 수법이 식별되지 않으며, 구글 공식 서비스의 가격과 기능을 명확히 제시하여 안전합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Google",
+            "evidence": "The video clearly displays 'Gemini를 Pro로 업그레이드하세요' (Upgrade Gemini to Pro) and ends with 'Google AI Pro의 Gemini' (Google AI Pro's Gemini) and '월 ₩29,000 Google AI Pro 구독에 포함' (₩29,000/month, included in Google AI Pro subscription). The logo displayed throughout the video is Google's Gemini logo. The metadata confirms the channel is Google's official YouTube channel. Search results indicate that 'Google AI Pro' is a subscription plan that includes access to Gemini Pro and other AI features, priced at ₩29,000 KRW per month. The landing page candidates 'https://one.google.com/ai-plans' and its Korean localized version 'https://one.google.com/intl/ko_KR/ai-plans' directly present the Google AI plans (Plus, Pro, Ultra), detailing their features, including Gemini access and pricing, which aligns with the video's advertisement for the 'Google AI Pro' plan. The main Gemini interface 'https://gemini.google.com/' is also included as a candidate for general consumer induction into the Gemini ecosystem.",
+            "landing_page_candidates": [
+                "https://one.google.com/ai-plans",
+                "https://one.google.com/intl/ko_KR/ai-plans",
+                "https://gemini.google.com/"
+            ],
+            "landing_page_url": "https://gemini.google.com/",
+            "product_name": "Gemini Pro",
+            "search_queries_used": [
+                "Google AI Pro Gemini",
+                "Gemini Pro 구독",
+                "Google Gemini Pro 한국",
+                "Gemini AI Pro",
+                "Google AI Pro 구독",
+                "Google AI Pro 및 Ultra — Gemini 3.1 Pro를 비롯한 다양한 기능을 이용하세요 site:google.com",
+                "one.google.com/ai",
+                "one.google.com/benefits/ai"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "Google Gemini",
+            "site_details": {
+                "brand_identity": "Google의 AI 어시스턴트인 Gemini의 메인 사이트입니다. 이 페이지는 글쓰기, 기획, 브레인스토밍, 학습, 이미지 및 비디오 생성, 정보 요약 등 다양한 작업을 지원하며, Google의 여러 앱과 통합됩니다. 사용자에게 Google AI의 다양한 모델과 기능을 소개하고 있습니다.",
+                "business_entity": {
+                    "address": "해당 정보 없음",
+                    "business_number": "해당 정보 없음",
+                    "company_name": "Google"
+                },
+                "official_claims": {
+                    "certifications": [],
+                    "patents": [],
+                    "tech_evidence": "Google의 대규모 언어 모델(LLM)을 기반으로 작동합니다. 텍스트, 컴퓨터 코드, 이미지, 오디오, 비디오 등 다양한 데이터 유형을 동시에 처리하고 생성할 수 있도록 학습되었습니다. Gemini 3, Gemini 3 Pro, Gemini 3 Flash와 같은 지능형 AI 모델을 제공합니다. 이미지 생성 모델인 Nano Banana 및 비디오 생성 모델인 Veo 3.1 Fast를 포함합니다. Gemini Pro는 1백만 토큰 컨텍스트 창을 제공하여 최대 1,500페이지의 텍스트 또는 3만 라인의 코드를 한 번에 처리할 수 있습니다. Google Search에 기반을 두고 있습니다. Deep Research 및 NotebookLM과 같은 전문 에이전트가 언급됩니다."
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": null,
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "1vNvhxCoqik"
+}

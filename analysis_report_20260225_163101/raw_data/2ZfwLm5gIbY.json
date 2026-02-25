@@ -1,0 +1,74 @@
+{
+    "analysis_result": {
+        "consultation": "실제 교육 업체이나 '건물주'와 같은 비유는 수익의 안정성을 오인하게 할 수 있습니다. 구매 전 구체적인 커리큘럼과 환불 규정을 반드시 확인하십시오.",
+        "evidence": [
+            {
+                "fact": "주식회사 클래스어라운드가 운영하는 실제 교육 플랫폼이며 평생교육시설로 신고되어 있습니다.",
+                "source": "아이비클래스 공식 웹사이트",
+                "url": "https://www.ivyclass.co.kr/"
+            },
+            {
+                "fact": "'수익 보장', '따박따박 월세' 등 확정적 이익을 암시하는 표현은 기만적 광고가 될 소지가 큽니다.",
+                "source": "공정거래위원회 광고 지침",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[수익과장] 소수 인원으로 고수익 확언",
+            "[비유남용] 건물주 표현으로 안심 유도",
+            "[정보은폐] 운영 리스크 및 노력 미고지",
+            "[의심차단] 수익 구조를 지나치게 단순화"
+        ],
+        "patent_check": null,
+        "reliability_level": "주의",
+        "risk_score": "55",
+        "summary": "[비현실적 수익 제안] 때문이며, 이는 커뮤니티 운영의 실제 난이도 및 불확실성과 대조되어 주의가 필요합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "아이비클래스",
+            "evidence": "영상에서 '아이비클래스'라는 브랜드명과 '카페로 온라인 건물주되자'라는 슬로건이 명확하게 제시됩니다. 또한, 영상의 화자는 자신을 '온라인 건물주 소영처럼'이라고 소개하며, 네이버 카페를 통해 월세처럼 수익을 얻는 방법을 설명합니다. 검색 결과 '아이비클래스' 웹사이트(ivyclass.co.kr)에서 '소영처럼' 강사가 진행하는 '(3월 10일 19시 30분_소영처럼) 네이버 카페로 온라인 건물주되기'라는 강의가 명시적으로 확인됩니다. 이 강의는 영상의 내용과 정확히 일치하며, 아이비클래스 웹사이트는 해당 강의를 포함한 다양한 수익화 강의를 제공하는 교육 플랫폼입니다. 따라서 아이비클래스 공식 웹사이트가 최종 구매 페이지로 가장 적합합니다.",
+            "landing_page_candidates": [
+                "https://ivyclass.co.kr"
+            ],
+            "landing_page_url": "https://www.ivyclass.co.kr/",
+            "product_name": "네이버 카페로 온라인 건물주되기",
+            "search_queries_used": [
+                "아이비클래스",
+                "아이비클래스 네이버 카페",
+                "아이비클래스 온라인 건물주",
+                "아이비클래스 강의",
+                "아이비클래스 카페",
+                "ivyclass.co.kr 소영처럼 네이버 카페 온라인 건물주",
+                "네이버 카페로 온라인 건물주되기 아이비클래스"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "아이비클래스 (Ivyclass)",
+            "site_details": {
+                "brand_identity": "아이비클래스는 성공적인 N잡(다중 수익)을 위한 온라인 교육 플랫폼으로, 최고의 강사진이 제공하는 차별화된 수익화 콘텐츠와 강의를 통해 수강생들의 수익 창출을 돕는 것을 목표로 합니다.",
+                "business_entity": {
+                    "address": "서울특별시 강남구 선릉로 611, 3층(논현동, 현경빌딩)",
+                    "business_number": "447-81-03689",
+                    "company_name": "주식회사 클래스어라운드"
+                },
+                "official_claims": {
+                    "certifications": [
+                        "원격평생교육시설: 제 원-871호",
+                        "언론기관부설평생교육시설: 제 언-323호"
+                    ],
+                    "patents": "해당 정보 없음",
+                    "tech_evidence": "해당 정보 없음"
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": null,
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "2ZfwLm5gIbY"
+}

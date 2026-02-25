@@ -1,0 +1,46 @@
+{
+    "analysis_result": {
+        "consultation": "수강 전 자격증 발급 비용을 반드시 확인하십시오. 민간자격정보서비스에서 해당 자격증의 활용도를 대조해보는 것이 안전합니다.",
+        "evidence": [
+            {
+                "fact": "해당 기관의 자격증은 국가공인이 아닌 민간자격이며, 수강은 무료이나 발급 시 비용이 발생합니다.",
+                "source": "민간자격정보서비스(PQI)",
+                "url": "https://www.pqi.or.kr"
+            },
+            {
+                "fact": "'취득까지 무료'라고 광고하며 발급비를 요구하는 행위는 기만적 표시·광고에 해당할 수 있습니다.",
+                "source": "공정거래위원회 가이드라인",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[정보은폐] 자격증 발급비 별도 안내 없음",
+            "[권위도용] 공적 기관 오인 유발 명칭 사용",
+            "[과대광고] 취득 과정 전액 무료로 오인 유도"
+        ],
+        "patent_check": null,
+        "reliability_level": "주의",
+        "risk_score": "45",
+        "summary": "무료 취득 강조를 통한 유료 발급 유도 및 공적 기관 오인 명칭 사용으로 인한 주의 등급입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "한국자격증협회",
+            "evidence": "영상에서 '한국자격증협회'라는 브랜드명이 반복적으로 노출되며, '100% 무료'로 '300가지 과정'의 자격증을 취득할 수 있다고 강조합니다. '한국자격증협회'를 검색창에 직접 입력하는 장면과 함께 공식 발급 기관임을 명시합니다. 검색 결과에서 'koreacert.or.kr'이 '한국자격증협회'의 공식 홈페이지로 확인되었으며, 무료 수강 및 다양한 자격증 과정을 제공하는 페이지로 연결됩니다.",
+            "landing_page_candidates": [
+                "https://koreacert.or.kr",
+                "https://koreacert.or.kr/main/class/list"
+            ],
+            "landing_page_url": "유효한 링크 없음",
+            "product_name": "무료 온라인 자격증 과정",
+            "search_queries_used": [
+                "한국자격증협회",
+                "한국자격증협회 공식 홈페이지",
+                "한국자격증협회 무료 자격증",
+                "한국자격증협회 수강신청"
+            ]
+        },
+        "step2_deep_verification": null
+    },
+    "video_id": "ai_ZF-2y0qw"
+}

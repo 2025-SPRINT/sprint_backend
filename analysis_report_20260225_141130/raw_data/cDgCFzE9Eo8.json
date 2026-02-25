@@ -1,0 +1,58 @@
+{
+    "analysis_result": {
+        "consultation": "유명 웹빌더 솔루션의 실제 기능에 기반한 광고입니다. 표시·광고법 위반 사항이 발견되지 않으므로 안심하고 시청하셔도 좋습니다.",
+        "evidence": [
+            {
+                "fact": "코딩 없는 웹사이트 제작 및 택배사 주문 연동 기능을 실제로 제공하고 있음을 확인하였습니다.",
+                "source": "아임웹(Imweb) 공식 서비스 상세",
+                "url": "https://imweb.me/"
+            }
+        ],
+        "issues": [
+            "[기능검증] 운송장 자동화 등 솔루션 실재",
+            "[표현적합] 기만적 다크패턴이나 허위사실 없음"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "실제 서비스 기능에 기반한 사용자 경험 광고로, 기만적 수법이 발견되지 않아 안전합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "아임웹 (Imweb)",
+            "evidence": "The video explicitly shows the '아임웹 (Imweb)' logo and brand name throughout. The title and content of the video discuss easy online selling and shipping management, directly linking to Imweb's services as an online sales solution. Google search results confirm that Imweb is a website builder and e-commerce solution, often referred to as an '온라인 판매 솔루션' (online sales solution). The official website is identified as 'imweb.me' through multiple search results, including Naver Wiki. The 'imweb.me/global' page specifically details global sales and shipping features, which aligns with the video's emphasis on simplified shipping.",
+            "landing_page_candidates": [
+                "https://imweb.me/",
+                "https://imweb.me/global"
+            ],
+            "landing_page_url": "https://imweb.me/",
+            "product_name": "온라인 판매 솔루션 (Online Sales Solution)",
+            "search_queries_used": [
+                "아임웹",
+                "imweb",
+                "아임웹 온라인 판매 솔루션",
+                "아임웹 배송 관리"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "아임웹 (Imweb)",
+            "site_details": {
+                "brand_identity": "아임웹은 코딩 지식 없이도 개인과 기업이 감각적인 반응형 웹사이트 및 온라인 쇼핑몰을 제작하고 운영할 수 있도록 돕는 플랫폼입니다. 디자인, 쇼핑, 주문 관리, CRM 캠페인 등 브랜드의 시작과 성장을 위한 다양한 기능과 서비스를 제공합니다.",
+                "business_entity": {
+                    "address": "해당 정보 없음",
+                    "business_number": "해당 정보 없음",
+                    "company_name": "Imweb Corp."
+                },
+                "official_claims": {
+                    "certifications": [
+                        "ISMS mark"
+                    ],
+                    "patents": [],
+                    "tech_evidence": "아임웹은 AWS 클라우드 서버를 사용하여 서비스의 지속성과 보안을 확보하며, 모바일 및 PC 등 모든 기기에 최적화된 반응형 웹사이트 제작을 지원합니다. 또한, 코딩 없이 드래그 앤 드롭 방식과 그리드 시스템을 활용하여 쉽고 효율적으로 웹사이트를 디자인할 수 있는 기술을 제공합니다."
+                },
+                "product_verification": null
+            }
+        }
+    },
+    "video_id": "cDgCFzE9Eo8"
+}

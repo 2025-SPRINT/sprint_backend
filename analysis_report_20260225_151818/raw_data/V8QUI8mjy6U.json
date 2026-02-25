@@ -1,0 +1,88 @@
+{
+    "analysis_result": {
+        "consultation": "니코틴이 없더라도 액상 가열 시 유해물질이 발생할 수 있어 '0%' 주장에 유의해야 합니다. 금연은 의약외품/의료기기 인증 제품을 통해 진행하십시오.",
+        "evidence": [
+            {
+                "fact": "'레딜' 또는 'REDILL' 명의의 전자담배 관련 타격감/풍미 특허는 조회되지 않습니다.",
+                "source": "KIPRIS 특허정보검색서비스",
+                "url": "http://www.kipris.or.kr/"
+            },
+            {
+                "fact": "니코틴 유무와 관계없이 '유해물질 0%' 또는 '인체 무해'를 강조하는 표현은 소비자를 오도할 위험이 큽니다.",
+                "source": "식약처 전자담배 표시·광고 가이드라인",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[허위과장] 유해물질 0%라는 비과학적 확언",
+            "[사례인용] 가족 성공담을 통한 감성적 호소",
+            "[경제유혹] 연초 대비 10배 저렴하다는 주장",
+            "[특허불명] 언급된 4종 특허의 실체 미확인"
+        ],
+        "patent_check": {
+            "details": "브랜드명(레딜/REDILL) 및 제품명 기준 등록 특허 미검색. 광고 내 4종 특허 주장에 대한 객관적 증거가 부족합니다.",
+            "patent_number": null,
+            "status": "미확인"
+        },
+        "reliability_level": "주의",
+        "risk_score": "45",
+        "summary": "유해물질 0%라는 과장된 안전성 강조와 검증 불가능한 가족 성공담을 활용한 주의 단계 광고입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "레딜 (REDILL)",
+            "evidence": "영상에서 제품에 'REDILL'이라는 브랜드명이 명확하게 노출됩니다. 또한 영상 내에서 '니코틴, 타르 아예 없는 전담', '유해 물질이 아예 제로'라고 언급하며 제품의 특징을 강조합니다. 검색 결과 '레딜'은 국내 전자담배 브랜드이며, 특히 '레딜 제로' 라인이 무니코틴, 무타르 제품으로 '대한민국 1등 무니코틴'을 표방하는 공식몰(redill.co.kr)을 운영하고 있음이 확인됩니다. 카카오톡 채널 또한 공식 브랜드 채널로서 랜딩 페이지 역할을 할 수 있습니다.",
+            "landing_page_candidates": [
+                "https://www.redill.co.kr",
+                "https://www.redill.co.kr/shop",
+                "https://pf.kakao.com/_yBxgDb"
+            ],
+            "landing_page_url": "https://www.redill.co.kr/",
+            "product_name": "레딜 제로 (REDILL Zero) 무니코틴 전자담배",
+            "search_queries_used": [
+                "REDILL",
+                "REDILL 전자담배",
+                "REDILL 금연",
+                "레딜",
+                "레딜 전자담배",
+                "레딜 금연"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "레딜 (REDILL)",
+            "site_details": {
+                "brand_identity": "레딜(REDILL)은 대한민국 1등 무니코틴 전자담배 브랜드이며, 무니코틴/무타르 전자담배의 기준을 제시하는 혁신적인 기업입니다. 청소년 보호와 올바른 성인 문화를 지향하며 자체적으로 성인 인증 절차를 도입하여 제품을 판매하고 있습니다. 액상 교체형 전자담배 제품을 선보이며, 레딜 오리지널과 레딜 제로 두 가지 라인을 운영합니다.",
+                "business_entity": {
+                    "address": "해당 정보 없음",
+                    "business_number": "해당 정보 없음",
+                    "company_name": "REDILL Corp."
+                },
+                "official_claims": {
+                    "certifications": [
+                        "국제특성분석연구소로부터 무니코틴, 무메틸니코틴 제품 인증",
+                        "안전 시험성적서 국내 최다 보유",
+                        "대한민국 관세청으로부터 무(無)니코틴 분석 결과"
+                    ],
+                    "patents": [
+                        "타격감 특허",
+                        "맛 극대화 특허",
+                        "누수 방지 특허",
+                        "타격감 & 풍미 극대화 구조 특허"
+                    ],
+                    "tech_evidence": "니코틴, 타르, 합성니코틴, 니코틴 유도체(예: 메틸니코틴) 등을 일절 사용하지 않은 무니코틴 제품입니다. 식품첨가물 기준 및 국제 향료 안전 기준(IFRA 등)에 부합하는 성분만 사용하고 있습니다. 유해물질 0% 혁신적인 건강형 베이핑을 지향하며, 연초급 타격감을 구현합니다."
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": {
+                        "negative": null,
+                        "positive": null
+                    },
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "V8QUI8mjy6U"
+}

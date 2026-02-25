@@ -1,0 +1,68 @@
+{
+    "analysis_result": {
+        "consultation": "정부 승인 교육 과정이므로 안심해도 좋으나, 취업 연계 조건과 인턴십 기회에 대한 구체적 자격 요건은 상세 페이지에서 재확인하십시오.",
+        "evidence": [
+            {
+                "fact": "국민내일배움카드 기반의 K-Digital Training 공식 교육 과정이며, 실제 운영 기관 정보가 투명하게 공개되어 있습니다.",
+                "source": "고용노동부 및 랜딩페이지",
+                "url": "https://bootcamp.likelion.net/"
+            }
+        ],
+        "issues": [
+            "[동질성호소] 무스펙·컴맹 강조로 경계심 해제",
+            "[의구심차단] 솔직한 후기를 표방한 신뢰 구축"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "동질성 호소 기법을 사용하나, 정부 지원 기반의 실제 교육 과정으로 확인되어 안전합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "멋쟁이사자처럼",
+            "evidence": "영상에서는 '멋쟁이사자처럼 그로스 마케팅 부트캠프'라는 브랜드와 제품명이 명확하게 표시됩니다. [cite: 0:51, 1:01] 메타데이터의 제목과 설명 또한 '그로스 마케팅'과 '그로스 마케팅 부트캠프'를 언급하고 있습니다. 메타데이터에 기재된 모집 기간(2026.01.29 ~ 2026.03.08)과 일치하는 정보를 구글 검색 결과에서 '멋사 부트캠프 - 멋쟁이사자처럼' 페이지(bootcamp.likelion.net)에서 찾을 수 있었으며, 해당 페이지는 '그로스 마케팅 부트캠프 4기'의 모집 기간을 '2026.01.28 ~ 2026.03.08'으로 명시하여 영상의 내용과 정확히 부합합니다. 영상 설명에 포함된 단축 URL(abit.ly)은 검색 결과에서 '그로스마케팅 부트캠프 5기'의 정보 페이지(boottent.co.kr)로 연결되었으나, 해당 페이지의 모집 시작일(2026.03.23)이 영상 메타데이터의 모집 기간과 일치하지 않아 공식 유입 경로로 보지 않았습니다.",
+            "landing_page_candidates": [
+                "https://bootcamp.likelion.net/"
+            ],
+            "landing_page_url": "https://bootcamp.likelion.net/",
+            "product_name": "그로스 마케팅 부트캠프",
+            "search_queries_used": [
+                "site:bootcamp.likelion.net 그로스 마케팅 부트캠프",
+                "멋쟁이사자처럼 그로스 마케팅 부트캠프 신청",
+                "abit.ly/kdtgm04_youtube_etc2"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "그로스 마케팅 부트캠프",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": {
+                    "address": "",
+                    "business_number": "",
+                    "company_name": ""
+                },
+                "official_claims": {
+                    "certifications": [],
+                    "patents": [],
+                    "tech_evidence": ""
+                },
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": {
+                        "address": "서울 종로구 종로3길17, 광화문D타워 D1동 16층, 17층",
+                        "business_number": "264-88-01106",
+                        "provider_name": "(주)멋쟁이사자처럼"
+                    },
+                    "review_analysis": {
+                        "negative": "등록된 리뷰 없음",
+                        "positive": "등록된 리뷰 없음"
+                    },
+                    "trust_indicators": [
+                        "국민내일배움카드 교육비 지원 가능"
+                    ]
+                }
+            }
+        }
+    },
+    "video_id": "F5TrpeVZWLY"
+}

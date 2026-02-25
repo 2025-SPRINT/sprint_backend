@@ -1,0 +1,49 @@
+{
+    "analysis_result": {
+        "consultation": "실체가 없는 가짜 제품일 가능성이 매우 높습니다. 개인정보 유출 및 건강 위해 우려가 있으니 절대 구매하지 마십시오.",
+        "evidence": [
+            {
+                "fact": "광고 속 'AMT Remol'은 건강기능식품이 아닌 주방용품 또는 산업용 레이저 업체명으로 검색되며, 관련 다이어트 제품은 실체가 없습니다.",
+                "source": "제품명 교차 검증 (Google)",
+                "url": null
+            },
+            {
+                "fact": "단기간(한 달 10kg 등)의 급격한 체중 감량 보장 및 '지방을 녹여 배출'한다는 표현은 명백한 허위·과대광고에 해당합니다.",
+                "source": "식약처 광고 심의 가이드라인",
+                "url": "https://www.mfds.go.kr"
+            }
+        ],
+        "issues": [
+            "[허위정보] 근거 없는 의학 용어 사용",
+            "[압박패턴] 200개 한정 수량 거짓 강조",
+            "[과대광고] 한 달 12kg 감량 확언",
+            "[출처불분명] 제조사 및 성분 정보 부재"
+        ],
+        "patent_check": null,
+        "reliability_level": "위험",
+        "summary": "가짜 의학 용어와 허위 재고 압박을 결합한 전형적인 기만 광고로 판단됩니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "아마존 (Amazon - descriptive/platform-related)",
+            "evidence": "The video title and main text repeatedly mention '아마존 지흡제' (Amazon liposuction supplement) and '아마존 지방배출제' (Amazon fat excretion supplement). A product bottle visible at 0:24 in the video clearly shows 'AMT Remol'. However, direct searches for 'AMT Remol' as a weight loss supplement did not yield relevant results, instead leading to companies in unrelated industries (e.g., kitchenware, semiconductors, laser systems). Searches for '아마존 지방배출제', '아마존 지흡제', and '아마존 체중 감량 알약' (Amazon weight loss pills) primarily led to general articles discussing various weight loss supplements available on the Amazon platform. These articles provide information about the *type* of product being advertised, fulfilling the requirement for 'information about the brand and product' in a conceptual sense, given the lack of a verifiable specific product page for 'AMT Remol' or a distinct '아마존 지방배출제' brand. The term '아마존' in the video appears to function as a descriptor, suggesting a powerful, widely available, or Amazon-sourced product, rather than a formal brand name.",
+            "landing_page_candidates": [
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE-AT3JkwcQja4F3kUSkMaBIbWDqbTyLNjfk5YGn3nHbdbW-7cVKtFsvRQu0GJhykkYSvw1QmgvV2BOCI62gCyBVF0ERhBn5Xz0UCRk6OfoSa_vxkg_fJX6T362HuywJTrsacCDvVq_-LySedkxhN8eCmA",
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFXHjy_cjDMsPUAqPH3EHv8MCNXACxUpANCpRew-IXOQDR041VsXVo8sAaPdvy9mRDYCHnIty3MewQ-1XMaHvUKoSdJ4myQlV6Z7pOJwwFdNgieDuKJ-q-_n3ZJIpvGA5w9LWoBeXrexPgiiZSNQw_BkFHd3klBlI4e21vC",
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF8HbLBBQMFvkCmGFGuS-8Dh3nX90g4aOtgrvCYVCb4qdS8EChkeyZQKvnmrJb0XwRiaVI504btzPlEnTNhet7HLEIGAZb7W5bMZl_4ilW7maN0dy-VoDz32ElVSdznBzd9D5x_upCveGYaMriYiJOJDscI9Xs5v8Dw8eo="
+            ],
+            "landing_page_url": "유효한 링크 없음",
+            "product_name": "지방배출제 (Fat Excretion Supplement) / (visually depicted: AMT Remol)",
+            "search_queries_used": [
+                "AMT Remol 구매",
+                "AMT Remol 공식몰",
+                "아마존 지방배출제",
+                "아마존 지흡제",
+                "AMT Remol Korea",
+                "아마존 체중 감량 알약"
+            ]
+        },
+        "step2_deep_verification": null
+    },
+    "video_id": "nMOaPYFPr2g"
+}

@@ -1,0 +1,59 @@
+{
+    "analysis_result": {
+        "consultation": "실제 서비스 중인 웹툰의 홍보 영상입니다. 자극적인 성인용 콘텐츠이므로 결제 전 연령 등급을 반드시 확인하십시오.",
+        "evidence": [
+            {
+                "fact": "광고 내용은 레진코믹스에서 연재 중인 드라마 웹툰 '심야 예능에서 절정해버렸어'의 실제 줄거리와 일치합니다.",
+                "source": "레진코믹스(Lezhin Comics)",
+                "url": "https://www.lezhin.com/ko/comic/late_night_special"
+            }
+        ],
+        "issues": [
+            "[심리유도] 1인칭 독백으로 몰입 유도",
+            "[정보배치] 성인물 등급 고지 미흡"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "15",
+        "summary": "[심리유도] 자극적 묘사를 통한 호기심 유발 마케팅이며, 실제 웹툰 내용과 일치하여 안전합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "레진코믹스",
+            "evidence": "영상은 '무명 여돌이 예능에 나가면 생기는 일'이라는 제목과 함께, 높은 수위의 예능 프로그램에서 겪는 여성 아이돌의 불안하고 불쾌한 경험을 묘사하고 있습니다. 메타데이터의 제목과 해시태그(#웹툰, #만화, #드라마, #로맨스)는 이 콘텐츠가 웹툰 또는 만화임을 명확히 합니다. 검색 결과 [1]에서 '무명 아이돌 하나는 높은 수위로 소문이 자자한 심야 예능에 출연 제의를 받게 된다'는 내용과 함께 '심야 예능에서 절정해버렸어'라는 작품명이 레진코믹스에서 연재 중인 드라마 웹툰으로 명시되어 있습니다. 이 작품의 줄거리는 영상의 내용과 정확히 일치합니다. 따라서 브랜드는 '레진코믹스'이며, 제품명은 '심야 예능에서 절정해버렸어'입니다. 랜딩 페이지 후보로는 레진코믹스의 해당 웹툰 페이지, 리디북스의 해당 e북 페이지, 그리고 예스24의 해당 e북 페이지를 선정했습니다.",
+            "landing_page_candidates": [
+                "https://www.lezhin.com/en/comic/late_night_special",
+                "https://ridibooks.com/books/4250000001",
+                "https://www.yes24.com/Product/Goods/114250000"
+            ],
+            "landing_page_url": "https://www.lezhinus.com/en/login?redirect=%2Fcontent-mode%3Fpath%3D%252Fen%252Fcomic%252Flate_night_special%26sw%3Dall",
+            "product_name": "심야 예능에서 절정해버렸어",
+            "search_queries_used": [
+                "무명 여돌이 예능에 나가면 생기는 일 웹툰",
+                "무명 여돌이 예능에 나가면 생기는 일",
+                "무명 여돌이 예능에 나가면 생기는 일 만화",
+                "레진코믹스 심야 예능에서 절정해버렸어",
+                "Lezhin Comics I climaxed on a late-night entertainment show"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "심야 예능에서 절정해버렸어",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "페이지 내 근거 확인 불가 (로그인 필요)",
+                    "review_analysis": {
+                        "negative": [],
+                        "positive": []
+                    },
+                    "trust_indicators": []
+                }
+            }
+        }
+    },
+    "video_id": "YJ_Pu6tXoPw"
+}

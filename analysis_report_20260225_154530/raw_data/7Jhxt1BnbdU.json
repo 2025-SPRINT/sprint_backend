@@ -1,0 +1,67 @@
+{
+    "analysis_result": {
+        "consultation": "기술적 실체는 확인되나, '즉각적 수익'은 과장된 표현일 수 있으니 도구적 관점에서 접근하십시오.",
+        "evidence": [
+            {
+                "fact": "Meta에 인수된 자율 AI 에이전트 플랫폼으로, SOC 2 및 ISO 보안 인증을 보유한 실제 서비스입니다.",
+                "source": "Manus 공식 홈페이지(manus.im)",
+                "url": "https://manus.im/"
+            }
+        ],
+        "issues": [
+            "[수익과장] 즉각적인 수익 창출 강조",
+            "[심리유도] 조급함을 자극하는 직접 화법",
+            "[언어결함] 배포를 대포로 표기한 비문"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "35",
+        "summary": "[비현실적 수익 제안] 때문이며, 이는 실제 수익 창출의 복잡성과 대조되어 주의가 필요합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Manus",
+            "evidence": "영상에서 'manus' 로고와 'manus.im' URL이 명확하게 표시됩니다. 영상은 아이디어를 몇 분 만에 출시하고 수익을 창출하며 도메인, 배포, 분석 기능을 제공하는 플랫폼으로 Manus를 소개합니다. 메타데이터의 파일명에도 'Manus'가 포함되어 있습니다. 구글 검색 결과, manus.im이 Manus AI의 공식 웹사이트임을 확인했으며, '프롬프트에서 웹 앱으로'라는 설명과 함께 웹 앱 생성, 배포, 분석 기능이 언급되어 영상의 내용과 일치합니다.",
+            "landing_page_candidates": [
+                "https://manus.im"
+            ],
+            "landing_page_url": "https://manus.im/",
+            "product_name": "AI 웹 앱 생성 및 수익화 플랫폼",
+            "search_queries_used": [
+                "manus.im",
+                "manus platform",
+                "manus 아이디어 출시",
+                "manus 수익화 플랫폼"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "Manus (AI Agent Platform / No-Code Web App Builder)",
+            "site_details": {
+                "brand_identity": "Manus는 Meta의 AI 에이전트 플랫폼으로, 사용자가 복잡한 작업을 자율적으로 실행할 수 있도록 지원합니다. 코드 생성, 웹사이트 및 앱 개발, 디자인, 데이터 분석, 콘텐츠 생성 및 리서치 등 AI 기반 워크플로우를 설계, 구축, 실행하여 인간의 역량을 확장하는 것을 목표로 합니다. 비기술적인 사용자도 AI를 통해 웹 앱을 생성하고 관리할 수 있는 노코드 웹사이트 빌더 역할도 수행합니다.",
+                "business_entity": {
+                    "address": "해당 정보 없음",
+                    "business_number": "해당 정보 없음",
+                    "company_name": "Meta (Manus is now part of Meta)"
+                },
+                "official_claims": {
+                    "certifications": [
+                        "SOC 2 Type 2 Letter of Attestation",
+                        "SOC 2 Type 1 Letter of Attestation",
+                        "ISO 27001 Official Certificate",
+                        "ISO 27701 Official Certificate"
+                    ],
+                    "patents": [],
+                    "tech_evidence": "자율 AI 에이전트 플랫폼. 텍스트를 프로덕션 레디 코드(HTML/React)로 변환하며, 프론트엔드, 백엔드, 데이터베이스 로직을 포함한 풀스택 코드를 생성합니다. Notion, GitHub, Slack, Google Calendar, Stripe 등 50개 이상의 타사 애플리케이션과 원활하게 연결됩니다."
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": null,
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "7Jhxt1BnbdU"
+}

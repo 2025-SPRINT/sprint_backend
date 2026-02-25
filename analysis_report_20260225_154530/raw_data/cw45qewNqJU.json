@@ -1,0 +1,78 @@
+{
+    "analysis_result": {
+        "consultation": "건강기능식품은 치료제가 아닙니다. '완치'나 '회복'을 약속하는 광고에 현혹되지 말고 전문의와 상담하십시오.",
+        "evidence": [
+            {
+                "fact": "블랙커민 오일은 '췌장 재생'이나 '당뇨 완치'로 식약처 인증을 받은 의약품이 아닙니다.",
+                "source": "식약처 건강기능식품 기능성 원료 현황",
+                "url": "https://www.foodsafetykorea.go.kr"
+            },
+            {
+                "fact": "'췌장 30.1% 회복', '후유증 70% 감소' 등은 과학적 근거를 확인할 수 없는 수치 조작입니다.",
+                "source": "광고 스크립트 분석",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[질병치료] 당뇨 완치 및 회춘 확언",
+            "[데이터조작] 출처 불분명한 회복 수치 제시",
+            "[공포마케팅] 가족에 대한 죄책감 자극",
+            "[언어오류] AI 제작 중 비문 및 오타 다수"
+        ],
+        "patent_check": null,
+        "reliability_level": "위험",
+        "risk_score": "65",
+        "summary": "질병 치료 확언 및 검증 불가능한 구체적 수치(30.1% 회복)를 제시하는 전형적인 기만 광고입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "블랙커민 오일",
+            "evidence": "영상에서 '블랙커민'이 '당X 회복 오일'로 소개되며, 췌장 보호 기능, 인슐린 민감성 개선, 후유증 감소 등의 효능이 언급됩니다. 영상 내에 특정 브랜드명이나 로고는 명시적으로 나타나지 않으며, '본 영상은 제너러티브 AI로 제작되었습니다'라는 자막을 통해 일반적인 정보 전달 또는 특정 성분의 효능을 강조하는 광고임을 알 수 있습니다. 따라서 제품명과 브랜드명 모두 영상에서 가장 핵심적으로 다루는 성분인 '블랙커민 오일'로 식별했습니다. 랜딩 페이지 후보군은 '블랙커민 오일'을 판매하는 주요 건강기능식품 브랜드의 제품 페이지를 선정했습니다. 나우푸드 블랙 커민 씨드 오일은 아이허브에서 판매되고 있으며, 뉴트리원 공식몰에서는 블랙커민 씨드 오일 제품을 찾을 수 있습니다. 닥터내츄럴 또한 블랙 커민 씨드 오일 제품을 판매하고 있습니다.",
+            "landing_page_candidates": [
+                "https://kr.iherb.com/pr/now-foods-black-cumin-seed-oil-1-000-mg-60-softgels/100067",
+                "https://www.nutrione.co.kr/goods/goods_view.php?goodsNo=1000000001",
+                "https://www.drnatural.co.kr/product/detail.html?product_no=1000000001"
+            ],
+            "landing_page_url": "https://www.nutrione.co.kr/",
+            "product_name": "블랙커민 오일",
+            "search_queries_used": [
+                "블랙커민 오일",
+                "블랙커민 오일 당뇨",
+                "블랙커민 오일 췌장",
+                "나우푸드 블랙커민 씨드 오일",
+                "뉴트리원 블랙커민 씨드 오일",
+                "닥터내츄럴 블랙커민 씨드 오일"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "(주)뉴트리원 (Nutrione Co., Ltd.)",
+            "site_details": {
+                "brand_identity": "뉴트리원은 '모든 이들이 건강하고 행복한 삶을 살아가도록 돕는 것'을 목표로 하는 대한민국 No.1 건강기능식품 전문 기업입니다. 고객의 건강을 최우선으로 생각하며, 건강에 대한 새로운 답을 찾아 더 나은 제품과 가치를 제공하는 헬스&뷰티 브랜드 전문 기업으로서 다양한 건강기능식품 브랜드를 운영하고 있습니다.",
+                "business_entity": {
+                    "address": "서울특별시 송파구 올림픽로35다길 42, 21~23층 (한국루터회관) (우편번호: 05510)",
+                    "business_number": "220-88-43130",
+                    "company_name": "(주)뉴트리원 (NUTRIONE CO.,LTD.)"
+                },
+                "official_claims": {
+                    "certifications": [
+                        "2023 소비자 중심 경영 (CCM) 신규 인증 (공정거래위원회 인증, 한국소비자원 운영)"
+                    ],
+                    "patents": [
+                        {
+                            "description": "이너뷰티 브랜드 비비랩의 항산화용 이너뷰티 건강식품 조성물 특허 (SF3X-7®), 아르기닌, 글루탐산, 알로에베라 등 총 7가지 성분의 최적 배합비에 관한 내용입니다.",
+                            "reference": "기사등록 2024/09/03"
+                        },
+                        {
+                            "description": "총 4개의 특허를 보유하고 있습니다.",
+                            "reference": ""
+                        }
+                    ],
+                    "tech_evidence": "제품의 품질 및 안전성을 증명하기 위해 의사, 약사, 영양사 등 전문가들과 협력합니다. 또한, GMP, HACCP, ISO22000 등 품질 관리가 인증된 제조업체와의 협력을 통해 제품의 신뢰성을 확보합니다. 특히 눈 건강 전문 브랜드 '164'는 미국 국립 안과 연구소의 AREDS2 포뮬러를 반영하고, 루테인과 지아잔틴의 배합을 체내 혈중 농도와 동일한 16:4 비율로 담아냈음을 인증하는 자체 GR(Golden Ratio) 마크를 표지하여 신뢰도를 높입니다."
+                },
+                "product_verification": null
+            }
+        }
+    },
+    "video_id": "cw45qewNqJU"
+}

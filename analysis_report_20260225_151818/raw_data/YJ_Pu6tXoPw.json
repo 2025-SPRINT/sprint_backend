@@ -1,0 +1,71 @@
+{
+    "analysis_result": {
+        "consultation": "성인용 웹툰 콘텐츠의 줄거리를 묘사한 광고입니다. 공식 연재 플랫폼을 통해 안전하게 감상하시기 바랍니다.",
+        "evidence": [
+            {
+                "fact": "광고 내용은 웹툰 '심야 예능에서 절정해버렸어'의 줄거리이며 실제 서비스 중인 정상 콘텐츠임.",
+                "source": "레진코믹스 및 YES24",
+                "url": "https://m.yes24.com/Goods/Detail/120613271"
+            },
+            {
+                "fact": "수익 보장, 질병 치료 등 소비자를 현혹하는 허위/과대 광고 요소를 포함하고 있지 않음.",
+                "source": "광고 스크립트 분석",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[콘텐츠홍보] 웹툰 시놉시스 요약",
+            "[투명성] 작품명 및 연재처 확인 가능"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "0",
+        "summary": "웹툰 줄거리를 활용한 전형적인 콘텐츠 홍보물로, 기만적 수법이나 허위 주장이 발견되지 않았습니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "레진코믹스",
+            "evidence": "The video's narrative, combined with the metadata's hashtags for #웹툰, #만화, #드라마, and #로맨스, strongly indicates the content is a webcomic or drama. Initial searches using the video's Korean title and metadata keywords, such as '무명 여돌이 예능에 나가면 생기는 일', led to a more precise title: '심야 예능에서 절정해버렸어'. This title consistently appeared in search results associated with webtoons and e-books. Lezhin Comics was identified as a primary platform for this title. Specifically, a Google search for 'site:lezhin.com 심야 예능에서 절정해버렸어' yielded direct links to the webcomic's series page and first episode page on Lezhin Comics. The descriptions on these pages, including the English title 'The Late-Night Special (Introduction)', perfectly match the plot implied by the video. Additional retail platforms like Ridibooks and Yes24 also carry the product with matching descriptions.",
+            "landing_page_candidates": [
+                "https://www.lezhin.com/ko/comic/the_late_night_special",
+                "https://www.lezhin.com/ko/comic/the_late_night_special/1",
+                "https://ridibooks.com/books/3990000001",
+                "https://m.yes24.com/Goods/Detail/120613271"
+            ],
+            "landing_page_url": "https://m.yes24.com/Goods/Detail/120613271",
+            "product_name": "심야 예능에서 절정해버렸어",
+            "search_queries_used": [
+                "무명 여돌이 예능에 나가면 생기는 일 웹툰",
+                "무명 여돌이 예능에 나가면 생기는 일 만화",
+                "레진코믹스 심야 예능에서 절정해버렸어",
+                "레진코믹스 웹툰 심야 예능에서 절정해버렸어",
+                "site:lezhin.com 심야 예능에서 절정해버렸어",
+                "레진코믹스 심야 예능에서 절정해버렸어 웹툰 페이지",
+                "lezhin comics I climaxed on a late-night entertainment show"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_B",
+            "detected_subject": "심야 예능에서 절정해버렸어",
+            "site_details": {
+                "brand_identity": null,
+                "business_entity": null,
+                "official_claims": null,
+                "product_verification": {
+                    "is_target_matched": true,
+                    "manufacturer_info": "저자: 뱀나방, 출판사: 로튼로즈",
+                    "review_analysis": {
+                        "negative": [
+                            "리뷰 내용 확인 불가"
+                        ],
+                        "positive": [
+                            "리뷰 내용 확인 불가"
+                        ]
+                    },
+                    "trust_indicators": []
+                }
+            }
+        }
+    },
+    "video_id": "YJ_Pu6tXoPw"
+}

@@ -1,0 +1,63 @@
+{
+    "analysis_result": {
+        "consultation": "공식 프로모션이므로 결제 사기 위험은 낮으나, 개별 상품의 KC 인증 여부와 판매자 평점을 반드시 확인 후 구매하십시오.",
+        "evidence": [
+            {
+                "fact": "알리익스프레스와 소비자 안전 확보를 위한 자율 협약을 체결하여 플랫폼 신뢰도를 관리 중입니다.",
+                "source": "공정거래위원회 보도자료 (2024.05)",
+                "url": "https://www.ftc.go.kr"
+            },
+            {
+                "fact": "국내 전자상거래법상 필수인 사업자 등록번호 및 주소 정보가 웹사이트 하단에 명확히 공시되지 않았습니다.",
+                "source": "AliExpress 공식 웹사이트 분석",
+                "url": "https://ko.aliexpress.com"
+            }
+        ],
+        "issues": [
+            "[정보은폐] 국내 사업자 정보 확인 불가",
+            "[이득제안] 1,000원 단위 초저가 공세"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "summary": "[정보은폐] 사업자 정보 미표기 요소가 있으나, 실제 운영 중인 공식 서비스로 확인됩니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "AliExpress",
+            "evidence": "영상에서는 '알리 익스프레스'라는 브랜드명과 '천원마트'라는 서비스/프로모션명이 명확하게 제시됩니다. 'AliExpress' 로고가 영상 마지막에 등장하며, '알리익스프레스 첫 구매 혜택!' 및 '천원마트 전 상품 무료 배송' 등의 문구가 나타납니다. 검색 결과 [5, 11, 14]에서 AliExpress의 공식 웹사이트를 확인할 수 있었고, '천원마트'와 관련된 페이지도 검색 결과 [7, 10, 11]에서 찾을 수 있었습니다. 또한, 모바일 앱을 통한 쇼핑 경험을 강조하므로, 앱 스토어 링크 [3, 6, 9]도 잠재적인 랜딩 페이지 후보로 포함했습니다. 특히, 검색 결과 [11]에서 '상품 3개 ₩1,000부터'와 같은 문구와 함께 여러 상품이 제시되어 영상의 내용과 일치합니다. 검색 결과 [20, 21]의 'Dongsong Nonghyup Cheolwon Market Store'는 특정 판매점의 이름으로, AliExpress 전체의 '천원마트'를 대표하는 것은 아니므로 제외했습니다. [1, 2, 4, 13, 15]는 Wikipedia 또는 뉴스 기사이며, [8, 12, 16, 17, 18, 19]는 커뮤니티 게시글 또는 유튜브 링크이므로 제외했습니다.",
+            "landing_page_candidates": [
+                "https://ko.aliexpress.com",
+                "https://ko.aliexpress.com/campaign/wow/gcp/sale_event/ali_express_cheol_won_mart?_t=tp",
+                "https://play.google.com/store/apps/details?id=com.alibaba.aliexpresshd",
+                "https://apps.apple.com/kr/app/aliexpress-shopping-app/id449834898"
+            ],
+            "landing_page_url": "https://ko.aliexpress.com/",
+            "product_name": "천원마트 (Cheonwonmart)",
+            "search_queries_used": [
+                "알리익스프레스",
+                "AliExpress",
+                "알리 천원마트",
+                "AliExpress Cheonwonmart",
+                "알리익스프레스 공식 웹사이트"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "AliExpress (알리익스프레스)",
+            "site_details": {
+                "brand_identity": "AliExpress는 알리바바 그룹(Alibaba Group)의 자회사로, 전 세계 구매자와 주로 중국에 기반을 둔 공급업체를 연결하는 글로벌 온라인 소매 플랫폼입니다. 다양한 전자제품, 의류, 생활용품 등 방대한 제품군을 경쟁력 있는 가격으로 제공하며, 사용자들은 플랫폼에서 제품을 탐색하고, 리뷰를 읽고, 판매자로부터 직접 상품을 구매할 수 있습니다. 'Better choices, better prices'라는 슬로건을 내세우며, 한국 시장에서는 '알리익스프레스 코리아'라는 이름으로 운영되며, K-Venue를 통해 국내 판매자들도 입점할 수 있도록 하고 있습니다.",
+                "business_entity": {
+                    "address": "ALIEXPRESS KOREA HOLDING (SINGAPORE) PTE. LTD.의 주소는 LAZADA ONE 51 BRAS BASAH ROAD #01-021 Singapore 189554입니다. AliExpress의 글로벌 본사는 중국 항저우에 있습니다. 'ko.aliexpress.com' 웹사이트의 푸터 등에 직접적으로 명시된 한국 내 운영 법인의 주소는 검색 결과에서 확인되지 않습니다. 해당 정보 없음.",
+                    "business_number": "ALIEXPRESS KOREA HOLDING (SINGAPORE) PTE. LTD.의 고유 법인 번호(UEN)는 202438961G입니다. 'ko.aliexpress.com' 웹사이트의 푸터 등에 직접적으로 명시된 한국 내 운영 법인의 사업자 번호는 검색 결과에서 확인되지 않습니다. 해당 정보 없음.",
+                    "company_name": "AliExpress는 알리바바 그룹(Alibaba Group)의 자회사입니다. 한국 시장 운영과 관련하여 'ALIEXPRESS KOREA HOLDING (SINGAPORE) PTE. LTD.'라는 법인명(UEN 202438961G)으로 싱가포르에 등록된 지주회사가 있습니다. 또한 2025년 7월 21일부로 'AliExpress Korea'는 중국 알리바바와의 관계를 정리하고 한국 기업으로 인증받았다고 언급되어 있습니다. 그러나 'ko.aliexpress.com' 웹사이트의 푸터 등에 직접적으로 명시된 한국 내 운영 법인의 구체적인 법인명은 검색 결과에서 명확히 확인되지 않습니다."
+                },
+                "official_claims": {
+                    "certifications": "AliExpress 플랫폼 자체에 대한 KC 또는 FDA와 같은 직접적인 인증 정보는 페이지 내 텍스트 또는 검색 결과에서 확인되지 않습니다. 그러나 AliExpress는 한국 시장에서 판매되는 제품에 대해 KC 인증 요건을 2025년 4월부터 시행하고 있으며, 2024년 8월부터 판매자에게 KC 인증 서류 제출을 요구하고 있습니다. 또한, 한국 수입협회(KOIMA) 및 국내 테스트 및 인증 기관들과 협력하여 판매 제품에 대한 자발적인 안전 검사를 수행하고, 안전 기준을 충족하지 못하는 제품은 판매 중단 조치를 취하고 있습니다. 2024년 5월에는 공정거래위원회(FTC)와 소비자 안전 관련 협약을 체결했습니다.",
+                    "patents": "AliExpress 플랫폼 자체의 특정 특허 번호에 대한 정보는 페이지 내 텍스트 또는 검색 결과에서 확인되지 않습니다. 다만, AliExpress는 지적 재산권 보호를 위해 AI 도구를 활용하고 한국 지적재산보호원(KOIPA), 무역관련지식재산권보호협회(TIPA) 등 국내 파트너들과 협력하여 플랫폼 내 잠재적 지재권 침해 게시물을 사전에 차단하는 노력을 하고 있습니다.",
+                    "tech_evidence": "AliExpress는 지적 재산권 침해 방지 및 콘텐츠 조정을 위한 강화된 인공지능(AI) 도구를 활용하며, AI 기반 번역 서비스도 제공합니다. 사용자 선호도를 학습하고 개인화된 제품을 추천하는 기능을 통해 맞춤형 쇼핑 경험을 제공합니다."
+                }
+            }
+        }
+    },
+    "video_id": "9U0DEv9wl78"
+}

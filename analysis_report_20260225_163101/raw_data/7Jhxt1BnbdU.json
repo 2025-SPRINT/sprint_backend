@@ -1,0 +1,67 @@
+{
+    "analysis_result": {
+        "consultation": "실제 서비스 중인 AI 도구이나 '즉시 수익'은 마케팅적 수사일 뿐입니다. 수익 창출은 개인의 아이템 경쟁력에 달려 있으므로 도구로만 활용하십시오.",
+        "evidence": [
+            {
+                "fact": "LLM 기반 자율 AI 에이전트로 실존하며, GAIA 벤치마크 등에서 기술력을 입증받은 서비스입니다.",
+                "source": "Manus AI 공식 사이트",
+                "url": "https://manus.im"
+            },
+            {
+                "fact": "Deployment를 '대포'로 오역하는 등 한국어 현지화가 미흡하며, '즉시 수익'이라는 과장된 표현을 사용합니다.",
+                "source": "광고 스크립트 분석",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[허위확언] 즉시 수익 창출 강조",
+            "[언어결함] 배포를 '대포'로 오번역",
+            "[정보은폐] 수익 발생 부가조건 생략"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "25",
+        "summary": "[비현실적 이득 제안] 및 기술적 오번역이 발견되나, 실제 AI 기술 기반 서비스로 확인됩니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "Manus",
+            "evidence": "The video explicitly displays 'manus' as the brand name and 'manus.im' as the website at the 0:20 and 0:22 marks. The video's narrative describes Manus as a solution to quickly launch ideas and generate revenue, offering features like domain, deployment, and analytics. Search results consistently refer to 'manus.im' as the official website for the 'Manus AI Website Builder' or 'AI Agent Platform' that creates full-stack web applications and automates tasks for revenue generation.",
+            "landing_page_candidates": [
+                "https://manus.im"
+            ],
+            "landing_page_url": "https://manus.im/",
+            "product_name": "AI Website Builder / AI Agent Platform",
+            "search_queries_used": [
+                "manus.im",
+                "manus platform",
+                "manus website builder",
+                "manus revenue generation platform"
+            ]
+        },
+        "step2_deep_verification": {
+            "analysis_case": "CASE_A",
+            "detected_subject": "Manus (AI agent)",
+            "site_details": {
+                "brand_identity": "Manus.im은 대규모 언어 모델(LLM)을 기반으로 구축된 자율 인공지능 에이전트이자 액션 엔진입니다. 직접적인 인간 개입 없이 작업을 실행하고, 워크플로우를 자동화하며, 복잡한 실제 작업을 독립적으로 수행하도록 설계되었습니다.",
+                "business_entity": {
+                    "address": "싱가포르 (위치 확인)",
+                    "business_number": "해당 정보 없음",
+                    "company_name": "초기에 Butterfly Effect Pte Ltd에 의해 개발되었으며, 이후 Meta Platforms에 인수되었습니다. Manus는 자체 앱과 웹사이트를 통해 구독을 계속 제공하며 싱가포르에 기반을 둡니다."
+                },
+                "official_claims": {
+                    "certifications": "해당 정보 없음",
+                    "patents": "해당 정보 없음",
+                    "tech_evidence": "대규모 언어 모델(LLM) 기반의 자율 인공지능 에이전트. GAIA 벤치마크에서 OpenAI Deep Research를 능가하는 것으로 보고되었습니다."
+                },
+                "product_verification": {
+                    "is_target_matched": null,
+                    "manufacturer_info": null,
+                    "review_analysis": null,
+                    "trust_indicators": null
+                }
+            }
+        }
+    },
+    "video_id": "7Jhxt1BnbdU"
+}

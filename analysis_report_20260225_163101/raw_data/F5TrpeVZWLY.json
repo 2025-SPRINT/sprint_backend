@@ -1,0 +1,44 @@
+{
+    "analysis_result": {
+        "consultation": "실제 존재하는 국비 지원 교육 프로그램입니다. 다만, '무스펙 합격' 등 홍보 문구는 개인차가 있으니 커리큘럼을 꼼꼼히 확인하십시오.",
+        "evidence": [
+            {
+                "fact": "그로스 마케팅 부트캠프 4기 모집 요강 및 교육 일정이 광고 내용과 일치함.",
+                "source": "멋쟁이사자처럼 공식 홈페이지",
+                "url": "https://likelion.net/"
+            },
+            {
+                "fact": "해당 브랜드는 고용노동부 인증을 받은 정식 직업능력개발훈련 운영 기관임.",
+                "source": "고용노동부 직업훈련포털(HRD-Net)",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[동질성호소] 무스펙·컴맹 등 강조로 경계심 해제",
+            "[의구심차단] 과거 경험을 통한 감성적 신뢰 유도"
+        ],
+        "patent_check": null,
+        "reliability_level": "안전",
+        "risk_score": "25",
+        "summary": "동질성 호소 기법을 사용 중이나, 실제 운영 중인 교육 기관의 공식 프로그램으로 확인되어 안전합니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "멋쟁이사자처럼",
+            "evidence": "영상에서는 '멋쟁이사자처럼' 로고와 '그로스 마케팅 부트캠프'라는 문구가 지속적으로 노출되며, 해당 부트캠프의 특징과 혜택을 설명하고 있습니다. 영상의 상세 설명에는 '그로스 마케팅 부트캠프 지원하러 가기' 링크와 함께 모집 기간(26.01.29 ~ 26.03.08) 및 교육 기간(26.03.10 ~ 26.07.01)이 명시되어 있습니다. 구글 검색 결과, '멋쟁이사자처럼'의 공식 웹사이트에서 '그로스 마케팅 부트캠프 4기' 모집 정보가 확인되었으며, 영상에 언급된 모집 기간과 일치합니다. 특히, '멋사 부트캠프' 페이지는 그로스 마케팅 부트캠프에 대한 상세 정보를 제공하고 있어, 광고의 최종 도달 페이지로 가장 적합하다고 판단됩니다.",
+            "landing_page_candidates": [
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHTDo02bMhYdKKs0c6u9cJqU_sLpYnGFO3_epUCKmN99nV7YPzlsthRHNoB2K44l5JJ7slnW0xqlTBtBsWiEw0WsOQeKznCAjclf071OYDvHFPir0qrb14N",
+                "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGVOn3MPeL7XyrczyN93C938gOLCvd2yBC15aeLK8NXU6wsqcGhJHhNdncUEvRqFVGtRv7HL7yqWOMvdvTEReS05i5-TbhFbS1JssSZI87"
+            ],
+            "landing_page_url": "유효한 링크 없음",
+            "product_name": "그로스 마케팅 부트캠프",
+            "search_queries_used": [
+                "멋쟁이사자처럼 그로스 마케팅 부트캠프",
+                "그로스 마케팅 부트캠프",
+                "멋쟁이사자처럼"
+            ]
+        },
+        "step2_deep_verification": null
+    },
+    "video_id": "F5TrpeVZWLY"
+}

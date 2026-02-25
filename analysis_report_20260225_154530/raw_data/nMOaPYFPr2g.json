@@ -1,0 +1,51 @@
+{
+    "analysis_result": {
+        "consultation": "의학적으로 검증되지 않은 공포 마케팅에 현혹되지 마십시오. 식약처 인증이 없는 해외 직구류 제품은 성분의 안전성을 담보할 수 없어 건강을 해칠 수 있습니다.",
+        "evidence": [
+            {
+                "fact": "'급성 지방화증' 또는 '지방저화증'은 공식 의학 용어가 아니며, 소비자의 불안감을 조성하기 위한 용어로 판단됨.",
+                "source": "식품의약품안전처/의학용어사전",
+                "url": null
+            },
+            {
+                "fact": "특정 기간 내 구체적인 체중 감량 수치(10kg, 12kg)를 보장하거나 '우습게 빠진다'는 표현은 불법 과대광고에 해당함.",
+                "source": "건강기능식품법 및 광고 가이드라인",
+                "url": null
+            }
+        ],
+        "issues": [
+            "[공포조장] 의학적 근거 없는 질병명 사용",
+            "[허위확언] 한 달 12kg 감량 등 과대광고",
+            "[압박패턴] 재고 200개 및 재입고 지연 강조",
+            "[사회공학] 지인 사례를 빙자한 구매 유도"
+        ],
+        "patent_check": null,
+        "reliability_level": "위험",
+        "risk_score": "85",
+        "summary": "허위 공포 마케팅(지방화증)과 비현실적 감량 확언 및 다크패턴(품절 임박)을 결합한 전형적인 기만 광고입니다."
+    },
+    "site_info": {
+        "step1_video_discovery": {
+            "brand": "KETO Advanced",
+            "evidence": "The video explicitly mentions '아마존 지흡제' (Amazon liposuction pill) as the product and shows a bottle labeled 'KETO Advanced'. It also states '안티콜 코리아입니다.' (This is Anticall Korea.) and discusses product stock depletion due to influencer marketing and discounts via '카카오 플친' (KakaoTalk Plus Friend). However, direct search results for 'Anticall Korea' or specific Korean landing pages for 'KETO Advanced' associated with this entity were not found.",
+            "landing_page_candidates": [],
+            "landing_page_url": "유효한 링크 없음",
+            "product_name": "KETO Advanced (아마존 지흡제)",
+            "search_queries_used": [
+                "KETO Advanced Korea",
+                "KETO Advanced 구매",
+                "아마존 지흡제",
+                "아마존 지흡제 KETO Advanced",
+                "Anticall Korea KETO Advanced",
+                "Anticall Korea",
+                "케토 어드밴스드",
+                "케토 어드밴스드 구매",
+                "안티콜 코리아 공식 홈페이지",
+                "KETO Advanced 카카오 플친",
+                "아마존 지흡제 카카오 플친"
+            ]
+        },
+        "step2_deep_verification": null
+    },
+    "video_id": "nMOaPYFPr2g"
+}
