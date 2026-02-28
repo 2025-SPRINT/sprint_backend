@@ -79,7 +79,6 @@ def get_video_info():
                     "channel_name": cached_info.get("channel_name"), 
                     "published_at": cached_info.get("published_at"), 
                     "thumbnail_url": cached_info.get("thumbnail_url"), 
-                    "view_count": cached_info.get("view_count"),
                     "cached": True
                 }
             })
@@ -100,9 +99,8 @@ def get_video_info():
             "title": snippet.get("title"),
             "channel_name": snippet.get("channelTitle"), 
             "published_at": snippet.get("publishedAt"), 
-            "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url"), 
-            "view_count": stats.get("viewCount") 
-        }
+            "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url")
+            }
 
         # [NEW] DB 저장 (Partial Update)
         try:
@@ -501,18 +499,19 @@ def trace_link_and_trust():
 
     v_id = get_video_id(url)
 
-    # 1. DB 캐시 확인 (중복 분석 방지)
+    # 1. DB 캐시 확인 (중복 분석 방지 및 메타데이터 획득)
     cached = db_handler.get_analysis_result(v_id)
+    
+    # 만약 신뢰도 리포트까지 이미 있다면 즉시 반환
     if cached and "trust_report" in cached:
         return jsonify({"status": "success", "data": cached["trust_report"], "cached": True})
 
     try:
-
         tracer = LinkTracer() 
         
         # Step 1: 영상 분석 및 구매 링크 추적
-        # (이 함수 내부에서 download -> analyze -> remove_temp 과정이 한 번에 일어납니다)
-        step1_res = tracer.analyze(url) 
+        # [수정] DB에 저장된 기본 정보(cached)를 analyze 함수에 전달합니다.
+        step1_res = tracer.analyze(url, hint_data=cached) 
         final_link = step1_res.get('landing_page_url')
 
         # Step 2: 구매 사이트 신뢰도 실사
@@ -530,7 +529,8 @@ def trace_link_and_trust():
             "step2_deep_verification": step2_res
         }
 
-        # 3. 결과 DB 저장 (Partial Update)
+        # 3. 결과 DB 저장
+        # [수정] 분석된 리포트뿐만 아니라, 분석 과정에서 사용된 메타데이터도 함께 업데이트/보존합니다.
         db_handler.save_analysis_result({"video_id": v_id, "trust_report": final_report})
 
         return jsonify({"status": "success", "data": final_report})

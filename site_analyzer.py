@@ -1,3 +1,5 @@
+#썸네일 o 버전
+
 import os
 import yt_dlp
 import re
@@ -24,7 +26,7 @@ class LinkTracer:
         self.youtube = build('youtube', 'v3', developerKey=self.youtube_api_key)
         self.client = genai.Client(api_key=self.gemini_key)
     
-    def get_comments(self, video_id, max_results=20):
+    def get_comments(self, video_id, max_results=50):
         try:
             request = self.youtube.commentThreads().list(
                 part="snippet",
@@ -45,26 +47,23 @@ class LinkTracer:
             match = re.search(pattern, url)
             if match: return match.group(1)
         return url.split('/')[-1].split('?')[0]
+    
+    def download_image(self, url):
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                # 바이너리 데이터를 반환하거나 임시 파일로 저장
+                return response.content
+            return None
+        except Exception as e:
+            print(f"⚠️ [Image Download Error] {e}")
+            return None
 
     def get_transcript(self, video_id):
         try:
             transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
             return TextFormatter().format_transcript(transcript).replace('\n', ' ').strip()
         except: return "자막 없음"
-
-    def download_video(self, video_url):
-        # 파일명이 겹치지 않게 timestamp 사용
-        temp_filename = f"temp_{int(time.time() * 1000)}.mp4"
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': temp_filename,
-            'quiet': True,
-            'overwrites': True,
-            'no_warnings': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
-        return temp_filename
 
     def verify_url(self, url):
         try:
@@ -76,134 +75,153 @@ class LinkTracer:
         except:
             return False, None
 
-    def analyze_with_gemini_multimodal(self, video_path, context_info):
-        video_file = None
-        try:
-            # Gemini 파일 업로드
-            video_file = self.client.files.upload(file=video_path)
-            while video_file.state.name == "PROCESSING":
-                time.sleep(2)
-                video_file = self.client.files.get(name=video_file.name)
+    def analyze_with_gemini_text(self, context_info, image_bytes=None, is_retry=False):
+        prompt = f"""
 
-            prompt = f"""
+        당신은 광고 유입 경로를 추적하는 마케팅 데이터 전문가입니다.
+제공된 **[메타 데이터]**와 **[썸네일 이미지]**를 심층 분석하여, 소비자가 최종 도달하게 될 '최정점의 구매 페이지'를 결정하세요.
 
-            당신은 광고 유입 경로를 추적하는 마케팅 데이터 전문가입니다.
-            제공된 [영상 파일]과 [메타 데이터]를 심층 분석하여, 소비자가 최종 도달하게 될 '최정점의 구매 페이지'를 결정하세요.    
-            
-            [메타 데이터]
-            {context_info} 
+[데이터 정보]
+메타 데이터: {context_info}
+썸네일 이미지: (사용자가 업로드한 이미지 파일)
 
 [분석 지침]
-1. 멀티모달 분석: 영상 파일과 메타데이터를 활용해 브랜드(또는 회사명)와 상품명(또는 서비스명)을 찾으세요. 
- - 영상을 분석할 땐 시각적 자료와 명시적인 정보 뿐만 아니라 내용과 맥락을 파악하여, 광고가 홍보하는 브랜드와 제품명을 찾아야합니다.
- - 메타데이터를 분석할 때도 명시적인 정보 뿐만 아니라 맥락을 파악하여 광고가 홍보하는 브랜드와 제품명을 찾아야합니다.
- - 영상에 지속적으로 뜨는 브랜드와 로고를 감지하세요. 
- - 최대한 많은 자료를 분석하여(하나의 자료만 보고 판단하지 않고) 정확하게 브랜드와 상품명을 결정하세요.
- *내용 및 맥락 파악: 영상 속에 예시로 잠시 등장하는 브랜드인지, 설명을 위해 언급된 제품인지, 댓글에서 비교를 위해 언급된 브랜드인지 등에 주의하세요.
-2. 검색 전략: 구글 검색 도구를 사용하여 아래 방식들로 찾은 모든 URL 후보군들을 찾아 'landing_page_candidates'를 키로 가지는 리스트에 입력하세요. 
+1. 멀티모달 분석: 메타데이터를 활용하여 브랜드(또는 회사명)와 상품명(또는 서비스명)을 추측하세요. 
+ - **중요: 추측할 때 썸네일을 참고하되, 썸네일에 명시적인 로고가 없거나 아예 연관이 없는 텍스트가 포함될 수 있으므로 썸네일로 추측한 내용은 가장 마지막 단계에서 검증하는 용도로만 활용하세요.
+ - 메타데이터를 분석할 때 명시적인 정보 뿐만 아니라 맥락을 파악하여 광고가 홍보하는 브랜드와 제품명을 찾아야합니다.
+ - [채널명, 영상제목, 영상스크립트, 설명란] 4가지 요소 중 최소 2개 이상에서 공통적으로 언급되거나 밀접한 연관이 있는 키워드에 집중하세요.
+ - 데이터 간의 맥락이 동떨어진 경우(예: 의약 제품 광고인데 채널명이 '이스라엘의 비밀'인 경우 등) 해당 채널명은 분석 가중치에서 제외하고, 제품과 직접 관련된 고유명사를 우선순위에 둡니다.
+
+ 2. 법인명 기반 역추적 (Entity Identification):
+ - 구글 검색을 통해 해당 브랜드의 운영 법인명을 반드시 추출하세요.
+ - 검색창 입력 시 제안되는 '자동 완성 법인명'을 반드시 확인하고 그 법인명도 최종 법인명으로 고려하세요.
+ - 연관 검색어와 기업 정보를 활용하여 공식 법인명을 파악한 후, 그 법인이 소유한 공식 자사몰 및 상품 상세 페이지를 역추적하십시오.
+
+3. 검색 전략 및 후보군 도출:
+ - 확보된 공식 URL을 포함해서, 브랜드/상품명 조합으로 구글 검색 도구를 사용하여 아래 방식들로 찾은 모든 URL 후보군들을 찾아 'landing_page_candidates'를 키로 가지는 리스트에 입력하세요. 
+ - 단순히 접속 가능한 URL이 아닌, '브랜드 신뢰도 분석'이 가능한 사이트를 추출해야 합니다.
  - 광고주가 주로 사용하는 호스팅 서비스(아임웹, 카페24, 고도몰 등)의 패턴을 고려하세요. 만약 공식몰 상세페이지를 찾을 수 없다면, 해당 브랜드의 공식 인스타그램 프로필 링크나 페이스북 광고 라이브러리를 검색하여 현재 활성화된 유입 경로를 역추적하세요.
  - 멀티모달 분석 과정에서 추출한 브랜드와 제품명을 검색하세요. (예: '상품명', '브랜드명', '브랜드명 + 상품명', '상품명 + 구매', '브랜드명 + 자사몰')
- - 이전 단계에서 지속적인 로고를 감지했었다면, 단순히 이름이 같다고 고르지 말고 로고도 비교해보세요.
-3. URL 우선순위 (Strict Hierarchy):
+
+4. URL 우선순위 (Strict Hierarchy):
  - 1위: 광고를 통해 파악한 정보들과 내용 및 맥락이 가장 일치하는 페이지
- - 2위: 독립 자사물의 단순 도메인(예: brand.co.kr), 독립 자사몰의 특정 상품 상세 페이지 (예: brand.co.kr/products/123)
+ - 2위: 독립 자사물의 단순 도메인, 독립 자사몰의 특정 상품 상세 페이지
  - 3위: 공식 홈페이지 메인 또는 오픈마켓(쿠팡 등) 판매 페이지 /네이버 브랜드스토어/스마트스토어 상세 페이지
- * 예시로 제시된 링크 구조에 얽매이지 마세요. 다양한 구조의 링크가 존재할 수 있지만, 존재하지 않는 링크를 추가하는 것은 안됩니다.
-4. 노이즈 제거: 커뮤니티 게시글, 유튜브 링크, 뉴스 기사 URL은 후보에서 절대 제외하세요.
-5. 응답은 반드시 아래 JSON 형식으로 하며, JSON 이외의 어느 설명이나 텍스트도 포함하지 마세요.
+ * 존재하지 않는 링크를 추가하는 것은 안됩니다.
+
+5. 노이즈 제거: 커뮤니티 게시글, 유튜브 링크, 뉴스 기사 URL은 후보에서 절대 제외하세요.
+
+6. 응답은 반드시 아래 JSON 형식으로 하며, JSON 이외의 어느 설명이나 텍스트도 포함하지 마세요.
  
 JSON 응답 형식:
  {{
  "brand": "식별된 브랜드명",
+ "Corporate Name": "법인명",
  "product_name": "상품명",
  "landing_page_candidates": ["URL1", "URL2", "URL3"],
- "search_queries_used": ["사용한 검색어 1", "사용한 검색어 2"],
-"evidence": "영상의 어떤 부분이나 검색 결과의 어떤 정보를 바탕으로 결정했는지 상세 기술"
+"evidence": "검색 결과의 어떤 정보를 바탕으로 결정했는지 상세 기술"
 }}
 
             """
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash", # 최신 모델명 확인 필요
-                contents=[video_file, prompt],
-                config=types.GenerateContentConfig(tools=[{"google_search": {}}])
+        
+        contents = [prompt]
+        if image_bytes:
+            contents.append(types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"))
 
+        try:
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash", # 모델명 오타 확인 (2.5 -> 2.0 등 환경에 맞게)
+                contents=contents,
+                config=types.GenerateContentConfig(tools=[{"google_search": {}}])
             )
 
-            json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
-            if not json_match: raise ValueError("AI 응답에서 JSON 추출 실패")
+            raw_text = response.text.strip()
             
-            res_data = json.loads(json_match.group())
-            if json_match:
-                res_data = json.loads(json_match.group())
+            # JSON 추출 로직
+            json_pattern = re.compile(r'```(?:json)?\s*(\{.*?\})\s*```', re.DOTALL)
+            match = json_pattern.search(raw_text)
+            
+            if match:
+                json_str = match.group(1)
             else:
-        # 에러 발생 시 로그를 찍어주면 디버깅이 편합니다.
-                print(f"AI RAW RESPONSE: {response.text}") 
-                raise ValueError("AI 응답에서 JSON 구조를 찾을 수 없습니다.")
+                fallback_pattern = re.compile(r'(\{.*\})', re.DOTALL)
+                fallback_match = fallback_pattern.search(raw_text)
+                json_str = fallback_match.group(1) if fallback_match else raw_text
 
-            candidates = res_data.get('landing_page_candidates', [])
-
-            final_url = "유효한 링크 없음"
-            for url in candidates:
-                is_live, real_url = self.verify_url(url)
-                if is_live:
-                    final_url = real_url
-                    break
+            res_data = json.loads(json_str, strict=False)
             
-            res_data['landing_page_url'] = final_url
-            return res_data
-        finally:
-            if video_file: 
-                self.client.files.delete(name=video_file.name)
+        except Exception as e:
+            print(f"❌ [Gemini API Error] {e}")
+            res_data = {"landing_page_candidates": [], "brand": "분석 실패", "evidence": str(e)}
 
-    def analyze(self, url):
+        # URL 검증 부분
+        candidates = res_data.get('landing_page_candidates', [])
+        final_url = "유효한 링크 없음"
+        
+        for url in candidates:
+            is_live, real_url = self.verify_url(url)
+            if is_live:
+                final_url = real_url
+                break
+
+        # 재시도 로직 (메서드 이름 변경에 맞춰 수정)
+        if final_url == "유효한 링크 없음" and not is_retry:
+            print("⚠️ [Retry] 유효한 링크가 발견되지 않아 동일한 과정을 1회 재시도합니다...")
+            return self.analyze_with_gemini_text(context_info, image_bytes, is_retry=True)
+        
+        res_data['landing_page_url'] = final_url
+        return res_data
+
+    def analyze(self, url, hint_data=None):
         v_id = self.extract_video_id(url)
-        # 1. 유튜브 API 호출 시 snippet 정보 가져오기
-        video_res = self.youtube.videos().list(part='snippet', id=v_id).execute()
+        thumbnail_url = None
         
-        if not video_res['items']:
-            raise ValueError("유튜브 API에서 영상 정보를 가져올 수 없습니다.")
-            
-        snippet = video_res['items'][0]['snippet']
-        
-        # [데이터 추가 파트]
-        channel_name = snippet.get('channelTitle', '알 수 없음') # 채널명 추출
-        title = snippet.get('title', '')
-        description = snippet.get('description', '')
+        # 1. 메타데이터 결정 (DB 혹은 API)
+        if hint_data and hint_data.get('title') and hint_data.get('channel_name'):
+            print(f"📦 [Cache Hit] DB 메타데이터 사용: {v_id}")
+            channel_name = hint_data.get('channel_name')
+            title = hint_data.get('title')
+            description = hint_data.get('description', '설명 없음')
+            thumbnail_url = hint_data.get('thumbnail_url') # DB에서 URL 가져옴
+        else:
+            print(f"🌐 [API Call] 유튜브 API 호출: {v_id}")
+            video_res = self.youtube.videos().list(part='snippet', id=v_id).execute()
+            if not video_res['items']:
+                raise ValueError("영상을 찾을 수 없습니다.")
+            snippet = video_res['items'][0]['snippet']
+            channel_name = snippet.get('channelTitle')
+            title = snippet.get('title')
+            description = snippet.get('description')
+            thumbnails = snippet.get('thumbnails', {})
+            thumbnail_url = (thumbnails.get('maxres') or 
+                             thumbnails.get('high') or 
+                             thumbnails.get('default', {})).get('url')
+
+        # 2. 이미지 다운로드 (DB에서 가져왔든 API에서 가져왔든 '분석'을 위해 다운로드 실행)
+        # Gemini에게 '이미지' 자체를 전달해야 하므로 바이트화가 필요합니다.
+        image_bytes = self.download_image(thumbnail_url) if thumbnail_url else None
+
+        # 3. 동적 데이터(자막, 댓글) 수집
         transcript = self.get_transcript(v_id)
-        comments = self.get_comments(v_id) # 댓글 추출
+        comments = self.get_comments(v_id)
 
-        # Gemini에게 제공할 최종 컨텍스트 구성 (구조화)
         context_text = f"""
-        [채널 정보]
         채널명: {channel_name}
-
-        [영상 정보]
-        제목: {title}
-        상세설명: {description}
-
-        [자막 데이터]
-        {transcript}
-
-        [댓글 데이터 (주요 댓글)]
-        {comments}
+        영상제목: {title}
+        영상설명: {description}
+        영상자막: {transcript}
+        주요댓글: {comments}
         """
-        # 영상 다운로드
-        video_path = self.download_video(url)
         
-        try:
-            return self.analyze_with_gemini_multimodal(video_path, context_text)
-        finally:
-            # 분석 후 로컬 영상 파일 즉시 삭제
-            if os.path.exists(video_path): 
-                os.remove(video_path)
-
+        # 4. 멀티모달 분석 수행 (텍스트 + 이미지 바이트)
+        return self.analyze_with_gemini_text(context_text, image_bytes)
 
 class BrandTrustAnalyzer:
     def __init__(self, client):
         self.client = client
         self.model_id = "gemini-2.5-flash" 
 
-    def generate_trust_report(self, target_url: str, product_name: str, brand: str, max_retries=3):
+    def generate_trust_report(self, target_url: str, product_name: str, brand: str, max_retries=5):
         """
         최대 max_retries번 재시도하며 사이트 분석을 수행합니다.
         """
