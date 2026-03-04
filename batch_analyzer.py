@@ -1,88 +1,100 @@
-import requests
-import json
 import pandas as pd
-import os
+import json
+import asyncio
 import time
 from datetime import datetime
 
+# 기존 라이브러리 임포트 (파일 경로 확인 필요)
+from app import get_youtube_transcript2, run_site_verification
+from gemini_main import evaluate_with_site_info
+
 # ==========================================
-# 1. 설정 및 분석 대상 URL 리스트
+# 1. 설정 및 경로
 # ==========================================
-BASE_URL = "http://localhost:5173/api/video/analyze" # app.py 서버 주소
+# 엑셀 파일명으로 정확히 지정
+INPUT_FILE = "스프린트 테스트결과.xlsx" 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
-OUTPUT_DIR = f"analysis_report_{TIMESTAMP}"
+OUTPUT_FILE = f"batch_retest_{TIMESTAMP}.xlsx"
 
-# 분석할 쇼츠 URL들을 이 리스트에 넣으세요
-video_urls = [
-        "https://www.youtube.com/shorts/nMOaPYFPr2g"
-]
+async def process_video(video_url):
+    """비동기로 유튜브 분석 및 Gemini 평가 수행"""
+    try:
+        # 1. 자막 및 사이트 정보 병렬 추출
+        task_transcript = asyncio.to_thread(get_youtube_transcript2, video_url)
+        task_site_trace = asyncio.to_thread(run_site_verification, video_url)
+        script_text, trust_report = await asyncio.gather(task_transcript, task_site_trace)
 
-# 결과 저장을 위한 폴더 생성
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(f"{OUTPUT_DIR}/raw_data", exist_ok=True)
+        if not script_text:
+            script_text = "자막 없음. 제공된 브랜드/사이트 정보를 바탕으로 분석하세요."
 
-def run_automation():
-    summary_results = []
-    
-    print(f"🚀 [Batch Start] 총 {len(video_urls)}개의 광고 분석을 시작합니다.")
-    print(f"📂 모든 결과는 '{OUTPUT_DIR}' 폴더에 기록됩니다.\n")
-
-    for i, url in enumerate(video_urls, 1):
-        # URL에서 Video ID 추출 (간단하게)
-        v_id = url.split('/')[-1].split('?')[0]
-        print(f"[{i}/{len(video_urls)}] 분석 중: {v_id}...")
+        # 2. Gemini 통합 분석
+        report = await evaluate_with_site_info(script_text, trust_report)
         
-        try:
-            # 1. app.py 서버에 통합 분석 요청 (5분 타임아웃)
-            response = requests.post(BASE_URL, json={"url": url}, timeout=300)
+        # 결과 JSON 파싱 및 정제
+        if isinstance(report, str):
+            clean_report = report.replace("```json", "").replace("```", "").strip()
+            analysis_result = json.loads(clean_report)
+        else:
+            analysis_result = report
             
-            if response.status_code == 200:
-                full_content = response.json().get('data', {})
-                
-                # [저장 1] 원본 데이터 전체를 JSON으로 백업
-                with open(f"{OUTPUT_DIR}/raw_data/{v_id}.json", "w", encoding="utf-8") as f:
-                    json.dump(full_content, f, ensure_ascii=False, indent=4)
-                
-                # 데이터 파싱 (Gemini 분석 결과 추출)
-                analysis = full_content.get('analysis_result', {})
-                trust_info = full_content.get('site_info', {}).get('step2_deep_verification', {})
-                landing_url = full_content.get('site_info', {}).get('step1_video_discovery', {}).get('landing_page_url')
+        return script_text, trust_report, analysis_result
+    except Exception as e:
+        return None, None, {"error": str(e)}
 
-                # [저장 2] 가이드라인에 따른 엑셀용 데이터 구성
-                summary_results.append({
-                    "Video_ID": v_id,
-                    "브랜드": analysis.get('brand'),
-                    "제품명": analysis.get('product_name'),
-                    "신뢰등급(reliability)": analysis.get('reliability_level'), # 가이드라인 1번
-                    "신뢰점수(risk_score)": analysis.get('risk_score'),
-                    "한줄요약(summary)": analysis.get('summary'),               # 가이드라인 2번
-                    "문제점(issues)": ", ".join(analysis.get('issues', [])),   # 가이드라인 3번
-                    "특허정보(patent)": analysis.get('patent_check'),           # 가이드라인 4번
-                    "신뢰점수": trust_info.get('trust_score', 0),
-                    "핵심조언(consultation)": analysis.get('consultation'),     # 가이드라인 6번
-                    "근거(evidence)": analysis.get('evidence'),                 # 가이드라인 5번
-                    "최종랜딩페이지": landing_url,
-                    "원본URL": url
-                })
-                print(f"✅ 분석 완료: {analysis.get('brand')} (등급: {analysis.get('reliability_level')})")
-            else:
-                print(f"❌ 분석 실패: {v_id} (HTTP {response.status_code})")
-                
-        except Exception as e:
-            print(f"⚠️ 에러 발생 ({v_id}): {str(e)}")
-            
-        # 서버 부하 방지를 위한 짧은 휴식
-        time.sleep(1.5)
+# ==========================================
+# 2. 메인 실행부
+# ==========================================
+def run_excel_batch():
+    print(f"📂 엑셀 데이터 로드 중: {INPUT_FILE}")
+    
+    # pandas의 read_excel을 사용하여 직접 읽기
+    # 엔진은 보통 'openpyxl'을 사용합니다.
+    try:
+        df = pd.read_excel(INPUT_FILE)
+    except Exception as e:
+        print(f"❌ 엑셀 파일을 읽을 수 없습니다: {e}")
+        return
 
-    # 2. 최종 엑셀 파일 생성
-    if summary_results:
-        df = pd.DataFrame(summary_results)
-        excel_path = f"{OUTPUT_DIR}/total_summary_report.xlsx"
-        df.to_excel(excel_path, index=False)
-        print(f"\n✨ [Batch Finished] 모든 분석이 완료되었습니다!")
-        print(f"📊 최종 보고서: {excel_path}")
-    else:
-        print("\n❌ 분석된 결과가 없어 보고서를 생성하지 못했습니다.")
+    results = []
+
+    for index, row in df.iterrows():
+        # 엑셀의 'Video_ID' 컬럼 읽기
+        v_id = str(row['Video_ID']).strip()
+        
+        # 엑셀 특유의 오류값이나 빈 셀 처리
+        if not v_id or v_id in ['nan', '#NAME?', 'None']:
+            print(f"⏩ [{index+1}] 유효하지 않은 ID 건너뜀")
+            continue
+        
+        video_url = f"https://www.youtube.com/shorts/{v_id}"
+        print(f"\n🚀 [{index+1}/{len(df)}] 분석 시작: {v_id}")
+        
+        # 비동기 분석 실행
+        script, site_info, analysis = asyncio.run(process_video(video_url))
+        
+        # 결과 매핑 (기존 정답 보존)
+        result_item = {
+            "순서": row.get('순서', index + 1),
+            "Video_ID": v_id,
+            "원본_위험도(정답)": row.get('원본_위험도(정답)', 'N/A'),
+            "기존_AI등급": row.get('신뢰등급(AI)', 'N/A'),
+            "신규_AI등급": analysis.get('reliability_level', '실패'),
+            "신규_리스크점수": analysis.get('risk_score', 0),
+            "요약": analysis.get('summary', '분석 실패'),
+            "증거": json.dumps(analysis.get('evidence', []), ensure_ascii=False),
+            "로그_JSON": json.dumps(analysis, ensure_ascii=False)
+        }
+        
+        results.append(result_item)
+        print(f"✅ 결과: {result_item['신규_AI등급']} (점수: {result_item['신규_리스크점수']})")
+        
+        # API 안정성을 위한 간격
+        time.sleep(1)
+
+    # 최종 결과를 다시 엑셀로 저장
+    output_df = pd.DataFrame(results)
+    output_df.to_excel(OUTPUT_FILE, index=False)
+    print(f"\n✨ 모든 작업 완료! 결과물: {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    run_automation()
+    run_excel_batch()

@@ -75,7 +75,8 @@ class LinkTracer:
         except:
             return False, None
 
-    def analyze_with_gemini_text(self, context_info, image_bytes=None, is_retry=False):
+    def analyze_with_gemini_text(self, context_info, image_bytes=None, retry_count=0):
+        MAX_RETRIES = 3
         prompt = f"""
 
         당신은 광고 유입 경로를 추적하는 마케팅 데이터 전문가입니다.
@@ -165,9 +166,12 @@ JSON 응답 형식:
                 break
 
         # 재시도 로직 (메서드 이름 변경에 맞춰 수정)
-        if final_url == "유효한 링크 없음" and not is_retry:
-            print("⚠️ [Retry] 유효한 링크가 발견되지 않아 동일한 과정을 1회 재시도합니다...")
-            return self.analyze_with_gemini_text(context_info, image_bytes, is_retry=True)
+        if final_url == "유효한 링크 없음" and retry_count < MAX_RETRIES:
+            retry_count += 1
+            print(f"⚠️ [Retry {retry_count}/{MAX_RETRIES}] 유효한 링크가 발견되지 않아 재시도합니다...")
+            # 재시도 시 약간의 대기 시간을 주어 API 할당량 문제를 방지할 수 있습니다.
+            time.sleep(1) 
+            return self.analyze_with_gemini_text(context_info, image_bytes, retry_count=retry_count)
         
         res_data['landing_page_url'] = final_url
         return res_data
