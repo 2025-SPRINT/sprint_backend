@@ -4,6 +4,7 @@ import csv
 import json
 from decimal import Decimal
 from dotenv import load_dotenv
+from datetime import datetime 
 
 # Load environment variables from .env
 load_dotenv()
@@ -86,4 +87,4 @@ def export_dynamodb_to_csv(output_file='dynamodb_dump.csv'):
         print(f"Error exporting to CSV: {e}")
 
 if __name__ == "__main__":
-    export_dynamodb_to_csv()
+    export_dynamodb_to_csv(output_file=f"dynamodb_dump_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
