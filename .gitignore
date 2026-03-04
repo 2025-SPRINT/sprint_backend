@@ -8,3 +8,5 @@ debug*/
 responses/
 Extraction*/
 *cookie*.txt
+*.csv
+*.json

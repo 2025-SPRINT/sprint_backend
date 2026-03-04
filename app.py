@@ -329,12 +329,14 @@ from youtube_transcript_api.formatters import TextFormatter
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
 from gemini_main import main as gemini_analyze, PROMPT
 
-@app.route('/api/video/transcript', methods=['POST'])
-@trace("Route: Get Transcript")
-def get_transcript():
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+
+@app.route('/api/video/check-transcript', methods=['POST'])
+@trace("Route: Check Transcript Exists")
+def check_transcript():
     """
-    유튜브 URL을 입력받아 자막을 추출
-    API 명세: POST /api/video/transcript
+    유튜브 URL을 입력받아 자막 존재 여부만 빠르게 검증
+    API 명세: POST /api/video/check-transcript
     """
     data = request.get_json()
     if not data or 'url' not in data:
@@ -344,18 +346,43 @@ def get_transcript():
         }), 400
 
     video_url = data.get('url')
+    
+    # URL에서 비디오 아이디 추출 
+    video_id = get_video_id(video_url)
+    if not video_id:
+        return jsonify({
+            "status": "success", 
+            "data": {"is_valid": False, "reason": "유효하지 않은 유튜브 URL형식"}
+        }), 200
 
-    script_text = get_youtube_transcript2(video_url)
-    if not script_text:
+    try:
+        # 데이터 전체를 다운받지 않고 자막 메타데이터 목록만 빠르게 조회
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        
+        return jsonify({
+            "status": "success",
+            "data": {
+                "is_valid": True,          
+                "has_transcript": True
+            }
+        }), 200
+
+    except (TranscriptsDisabled, NoTranscriptFound):
+        # 자막이 비활성화 되어 있거나 찾는 언어 자막이 없는 경우 (검증 실패)
+        return jsonify({
+            "status": "success",
+            "data": {
+                "is_valid": False,
+                "has_transcript": False,
+                "reason": "해당 영상에 자막이 제공되지 않습니다."
+            }
+        }), 200
+        
+    except Exception as e:
         return jsonify({
             "status": "error",
-            "message": "자막을 찾을 수 없습니다."
-        }), 404
-
-    return jsonify({
-        "status": "success",
-        "data": script_text
-    })
+            "message": f"자막 확인 중 오류 발생: {str(e)}"
+        }), 500
 
 
 import asyncio
