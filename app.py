@@ -29,9 +29,9 @@ from flask import Flask, jsonify, request
 from site_analyzer import LinkTracer, BrandTrustAnalyzer
 import os
 import json
-# import cv2
-# import imageio
-from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key
+
+# app.py 최상단 (다른 import들과 함께)
+from yt_shorts import get_video_id, collect_and_split_data, get_or_save_api_key, get_youtube_comments
 # from models.npr_model.npr_wrapper import NPRDetector
 
 # ==========================================
@@ -325,6 +325,9 @@ import asyncio
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
+# app.py 상단
+
+
 
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
 from gemini_main import main as gemini_analyze, PROMPT
@@ -391,33 +394,44 @@ import asyncio
 @trace("Route: Integrated Video & Site Analysis (Fail-safe)")
 def analyze_video():
     data = request.get_json()
-    if not data or 'url' not in data:
-        return jsonify({"status": "error", "message": "Missing 'url' in request body"}), 400
-
     video_url = data.get('url')
     video_id = get_video_id(video_url)
 
     async def run_analysis():
+        # 1. 자막 가져오기
         task_transcript = asyncio.to_thread(get_youtube_transcript2, video_url)
+        
+        # 2. 사이트 추적 (tracer 인스턴스는 여기서만 사용)
         task_site_trace = asyncio.to_thread(run_site_verification, video_url)
-
-        script_text, trust_report = await asyncio.gather(task_transcript, task_site_trace)
         
+        # 3. [수정] yt_shorts.py에 정의된 독립 함수를 직접 호출 (가장 안전)
+        from yt_shorts import get_youtube_comments
+        task_comments = asyncio.to_thread(get_youtube_comments, video_url) # video_url 전달
 
-        if not script_text:
-            script_text = "이 영상은 자막을 제공하지 않습니다. 웹사이트 정보와 브랜드명을 기반으로 분석하세요."
+        script_text, trust_report, comments_raw = await asyncio.gather(
+            task_transcript, task_site_trace, task_comments
+        )
 
-        # 2. 통합 정보를 Gemini에게 전달
+        # 댓글 데이터(리스트)를 Gemini가 읽기 좋게 문자열로 변환
+        if isinstance(comments_raw, list):
+            comments_text = " | ".join([c['text'] for c in comments_raw])
+        else:
+            comments_text = str(comments_raw)
+
+        # 4. Gemini 분석 호출
         from gemini_main import evaluate_with_site_info
-        report = await evaluate_with_site_info(script_text, trust_report)
+        report = await evaluate_with_site_info(
+        script_text, 
+        trust_report.get('step2_deep_verification'), # 웹사이트 상세 분석 결과
+        comments_text,                                # 댓글 데이터
+        trust_report.get('step1_video_discovery')    # 브랜드/법인/상품명 추출 결과 (이게 누락됨!)
+        )
         
-        return (script_text, trust_report, report), None
+        return (script_text, trust_report, report, comments_text), None
 
     try:
         result, error = asyncio.run(run_analysis())
-        
-        # 이제 error는 네트워크 치명적 오류가 아닌 이상 발생하지 않습니다.
-        script_text, trust_report, report = result
+        script_text, trust_report, report, comments_data = result
 
         try:
             # Gemini 응답이 문자열일 경우 JSON 파싱
@@ -452,19 +466,23 @@ def analyze_video():
 def run_site_verification(video_url):
     from site_analyzer import LinkTracer, BrandTrustAnalyzer
     tracer = LinkTracer()
+    
+    # Step 1: 여기서 브랜드명, 법인명, 상품명이 추출됩니다.
     step1_res = tracer.analyze(video_url)
     final_link = step1_res.get('landing_page_url')
     
     step2_res = None
     if final_link and "http" in final_link:
         analyzer = BrandTrustAnalyzer(tracer.client)
+        # Step 2: 상세 신뢰도 리포트 생성
         step2_res = analyzer.generate_trust_report(
             target_url=final_link,
             product_name=step1_res.get('product_name'),
             brand=step1_res.get('brand')
         )
+        
     return {
-        "step1_video_discovery": step1_res,
+        "step1_video_discovery": step1_res, # 여기에 브랜드/법인/상품명 포함됨
         "step2_deep_verification": step2_res
     }
     

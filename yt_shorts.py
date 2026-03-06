@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_or_save_api_key():
-    return os.getenv("YT_SHORTS_API_KEY")
+    return os.getenv("Youtube_API_Key")
 
 def get_video_id(url):
     patterns = [r'shorts/([\w-]+)', r'v=([\w-]+)', r'youtu.be/([\w-]+)']
@@ -17,6 +17,34 @@ def get_video_id(url):
         match = re.search(pattern, url)
         if match: return match.group(1)
     return None
+
+def get_youtube_comments(video_url, max_results=15):
+    from googleapiclient.discovery import build
+    api_key = get_or_save_api_key()
+    video_id = get_video_id(video_url)
+    
+    youtube = build("youtube", "v3", developerKey=api_key)
+    try:
+        request = youtube.commentThreads().list(
+            part="snippet",
+            videoId=video_id,
+            maxResults=max_results,
+            order="relevance" # 유용한 댓글 위주
+        )
+        response = request.execute()
+        
+        comments = []
+        for item in response.get("items", []):
+            comment = item["snippet"]["topLevelComment"]["snippet"]
+            comments.append({
+                "author": comment["authorDisplayName"],
+                "text": comment["textDisplay"],
+                "like_count": comment["likeCount"]
+            })
+        return comments
+    except Exception as e:
+        print(f"댓글 수집 실패: {e}")
+        return []
 
 @trace("YouTube Logic: Collect & Split Data")
 def collect_and_split_data(api_key, url, video_id):

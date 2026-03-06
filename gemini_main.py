@@ -351,7 +351,7 @@ PROMPT_6 = """
 
 PROMPT_7 = """
 # Role
-당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장과 랜딩페이지 상세정보의 내용을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한** 분석 리포트를 제공하는 것입니다.
+당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트의 주장, 광고 쇼츠의 댓글과 랜딩페이지 상세정보, 상품 관련 정보들의 내용을 검증하여, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한** 분석 리포트를 제공하는 것입니다.
 
 # Principles
 1. **중립성 유지**: 광고가 무조건 거짓이라거나, 무조건 진실이라고 예단하지 마십시오. 오직 '검증된 증거'에 기반하여 판단하십시오.
@@ -369,15 +369,15 @@ PROMPT_7 = """
    - **특허 언급이 없으면**: KIPRIS 검색을 생략하고 `patent_check`를 `null`로 반환합니다.
    - 일반 주장 및 인증 언급 시: Google 검색 그라운딩을 통해 해당 제품/성분의 효능, 식약처 인증 여부, 관련 뉴스를 확인합니다.
 3. **결과 매핑 및 점수 합산 (Mapping & Scoring)**:
-    1. 주장 및 근거의 실증성 (35점)
-    -비현실적 이득 제안 (20점): 구체적 근거 없이 "인생 역전", "월 천 보장" 등 감당하기 힘든 혜택을 약속하면 20점.
+    1. 주장 및 근거의 실증성 (30점)
+    -비현실적 이득 제안 (15점): 구체적 근거 없이 "인생 역전", "월 천 보장" 등 감당하기 힘든 혜택을 약속하면 15점.
     -사회적 승인 조작 (10점): "85,000명 돌파" 등 출처 불분명한 숫자로 군중심리를 이용하면 10점.
     -거짓 할인 및 유인 판매 (5점): 365일 세일 중이거나, 낚시성 혜택으로 클릭을 유도하면 5점.
 
     2. 언어적 기만성 및 절대적 표현 (35점)
     -동질성 호소 및 직접 화법 (10점): "저도 평범한 직장인이었습니다" 등 감정적 유대를 강요하면 10점.
     -의구심 사전 차단 (10점): "사기라고 생각하시나요?" 등 의문을 제기할 기회를 선제적으로 차단하면 10점.
-    -비문 및 번역투 (5점): 맞춤법이 엉망이거나 외국어 번역 느낌이 강해 전문성이 결여되면 5점.
+    -비문 및 번역투 (5점): 맞춤법이 엉망이거나 외국어 번역 느낌이 강해 전문성이 결여되면 5점. 자막 추출 과정에서의 오류 수준으로 볼 수 있는 것은 무시.
     -감정적 언어사용 (10점): "기회를 버리시겠습니까?" 등 죄책감이나 불안을 자극하면 10점.
 
     3. 정보원의 투명성 및 사회적 증거 (15점)
@@ -385,10 +385,10 @@ PROMPT_7 = """
     -숨겨진 정보 (5점): 환불 규정이나 필수 약관을 찾기 힘들게 꽁꽁 숨겨두었다면 5점.
     -잘못된 계층 구조 (5점): '구매하기'는 크게, '취소하기'는 흐릿하거나 작게 만들었다면 5점.
 
-    4. 시각적 유도 및 다크 패턴 (15점)
+    4. 다크 패턴 및 소비자 반응 (20점)
     -허위 시간 제한 알림 (5점): 가짜 카운트다운이나 매일 반복되는 "오늘 마감"을 사용하면 5점.
     -허위 재고/수요 알림 (5점): "현재 5,000명 접속 중" 등 허위 실시간 알림창을 띄우면 5점.
-    -반복 간섭 (5점): 팝업을 꺼도 계속 뜨거나, 특정 행동을 할 때까지 사용자를 괴롭히면 5점.
+    -댓글 평판 분석 (10점): 상품에 대한 부정적인 댓글 발견 시 10점.
 
 4. **결과 생성 (JSON Generation)**: 위 평가를 바탕으로 주어진 JSON Schema에 맞춰 결과를 생성합니다.
 
@@ -416,7 +416,7 @@ PROMPT_7 = """
 8. 'risk_score' : 계산된 최종 의심 성적.
 
 # Context
-이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트와 랜딩페이지의 상세 정보입니다. 위 지침을 준수하여 분석하십시오.
+이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트, 랜딩페이지의 상세 정보, 쇼츠 광고의 댓글과 브랜드명, 법인명, 상품명입니다. 위 지침을 준수하여 분석하십시오.
 """                                                                               
 
 PROMPT = PROMPT_7
@@ -453,7 +453,7 @@ class AdAnalysisResult(TypedDict):
 @trace("Gemini Analysis (Full)")
 async def main(prompt, script):
     load_dotenv()
-    api_key = os.getenv("api_key_grounding")
+    api_key = os.getenv("API_KEY")
     client = genai.Client(api_key=api_key)
 
     # 1. Start KIPRIS MCP Connector (싱글톤 사용으로 재사용)
@@ -652,17 +652,23 @@ def save_response_to_file(token_usage, prompt_text, response_text, folder_path="
     print(f"Response saved to {new_file_path}")
 
 @trace("Final Combined Analysis")
-async def evaluate_with_site_info(script_content, site_details):
-
+async def evaluate_with_site_info(script_content, site_details, comments_data, discovery_data): # comments_data 추가
+    discovery = discovery_data if discovery_data else {}
+    # Gemini에게 전달될 최종 텍스트 구성
     combined_input = f"""
 [광고 스크립트 내용]
 {script_content}
 
+[사용자 댓글 및 반응]
+{json.dumps(comments_data, indent=2, ensure_ascii=False) if comments_data else "댓글 정보 없음"}
+
 [웹사이트 분석 상세 내용 (site_details)]
 {json.dumps(site_details, indent=2, ensure_ascii=False)}
-"""
-    return await main(PROMPT_7, combined_input)
 
-if __name__ == "__main__":
-    print("Start main")
-    asyncio.run(main("", SCRIPT))
+[추출된 브랜드/상품 정보]
+- 브랜드: {discovery.get('brand')}
+- 법인명: {discovery.get('Corporate Name')}
+- 상품명: {discovery.get('product_name')}
+"""
+    # PROMPT_7과 합쳐서 Gemini 호출
+    return await main(PROMPT_7, combined_input)
