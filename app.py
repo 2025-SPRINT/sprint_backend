@@ -104,6 +104,10 @@ def get_video_info():
 
         # [NEW] DB 저장 (Partial Update)
         try:
+            client_ip = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
+            response_data["client_ip"] = client_ip
+            response_data["user_agent"] = user_agent
             db_handler.save_analysis_result(response_data)
         except Exception as e:
             print(f"⚠️ [DB Error] {e}")
@@ -293,6 +297,10 @@ def detect_deepfake_with_gemini_25():
 
             # [NEW] DB 저장 (Partial Update)
             try:
+                client_ip = request.remote_addr
+                user_agent = request.headers.get('User-Agent', '')
+                analysis_data["client_ip"] = client_ip
+                analysis_data["user_agent"] = user_agent
                 db_handler.save_analysis_result(analysis_data)
             except Exception as e:
                 print(f"⚠️ [DB Error] {e}")
@@ -441,10 +449,14 @@ def analyze_video():
 
         # DB 저장 시도
         try:
+            client_ip = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
             db_handler.save_analysis_result({
                 "video_id": video_id,
                 "script_analysis": analysis_result,
-                "trust_report": trust_report
+                "trust_report": trust_report,
+                "client_ip": client_ip,
+                "user_agent": user_agent
             })
         except: pass
 
@@ -576,7 +588,16 @@ def trace_link_and_trust():
 
         # 3. 결과 DB 저장
         # [수정] 분석된 리포트뿐만 아니라, 분석 과정에서 사용된 메타데이터도 함께 업데이트/보존합니다.
-        db_handler.save_analysis_result({"video_id": v_id, "trust_report": final_report})
+        try:
+            client_ip = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
+            db_handler.save_analysis_result({
+                "video_id": v_id,
+                "trust_report": final_report,
+                "client_ip": client_ip,
+                "user_agent": user_agent
+            })
+        except: pass
 
         return jsonify({"status": "success", "data": final_report})
 

@@ -419,7 +419,60 @@ PROMPT_7 = """
 이후 내용은 사용자가 시청한 유튜브 쇼츠 광고의 스크립트, 랜딩페이지의 상세 정보, 쇼츠 광고의 댓글과 브랜드명, 법인명, 상품명입니다. 위 지침을 준수하여 분석하십시오.
 """                                                                               
 
-PROMPT = PROMPT_7
+######################################################################
+# NEW PIPELINE PROMPTS (2-Step Verification)                         #
+######################################################################
+
+PROMPT_STEP_1 = """
+# Role
+당신은 사실 확인 전문 연구원입니다. 사용자가 제공하는 광고 스크립트를 보고, 일반적인 의학적 합의, 제품의 식약처 인증 여부, 성분의 효능 등 사실 관계를 확인해야 합니다.
+
+# Task
+1. 제공된 광고 스크립트에서 검증이 필요한 핵심 내용(효능, 성분, 주의사항 등 일반적 청구 항목)을 추출하세요.
+2. 당신에게 제공된 "Google Search" 도구를 사용하여 해당 내용을 확인하고 요약하세요. (특허 관련 내용은 이 단계에서 깊게 파고들지 않아도 됩니다.)
+3. 당신이 찾아낸 사실(Fact)들을 리스트 형태로 정리하여 반환하세요.
+"""
+
+PROMPT_STEP_2 = """
+# Role
+당신은 특허 전문 조사관입니다. 사용자가 제공하는 광고 스크립트를 읽고, 광고 내에서 '특허', '출원', '등록' 등 특허와 관련된 주장이 있는지 파악해야 합니다.
+
+# Task
+1. 만약 광고에서 특허 관련 언급이 없다면 "해당 없음"이라고 답변을 종료하세요.
+2. 특허 관련 언급이 있다면, 제공된 KIPRIS MCP 도구를 활용하여 해당 특허가 실제로 한국특허청에 등록되어 있는지 검색하세요.
+3. KIPRIS 검색 시, 광고에 언급된 성분명, 기술명 등을 추출하여 전문적인 키워드로 바꾸어 검색해야 합니다. (예: 인삼 섭취 -> 인삼 추출물 조성물)
+4. 만약 검색 결과가 있다면 해당 특허의 출원인, 번호, 발명 명칭, 내용 등과 광고의 주장이 일치하는지 요약하여 반환하세요.
+5. 없다면 "특허 존재 미확인 또는 허위"라는 결론을 기록하세요.
+"""
+
+PROMPT_8 = """
+# Role
+당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트와 **사전에 검증된 두 가지 리포트(일반 팩트체크, 특허 검증체크)**를 바탕으로, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한 JSON 분석 리포트**를 반환하는 것입니다.
+
+# Principles
+1. **중립성 유지**: 아래 제공될 'Step 1(일반 팩트) / Step 2(특허 팩트)' 내용을 전적으로 신뢰하고 이를 근거로 평가하십시오.
+2. **간결성 (Brevity)**: 프론트엔드에서 표시하기 용이하도록 불필요한 수식어나 반복을 피하십시오.
+3. 점수 산정(최대 100점 시작, 위반 시 차감 또는 감점 합산) 등을 통해 객관적 등급을 결정하십시오.
+
+# Scoring Criteria (결과 매핑 및 감점)
+1. 사회공학적 조작 및 심리 분석 (40점) - 비현실적 이득(15점), 동질성 호소(15점), 의구심 차단(10점)
+2. 압박형 다크패턴 분석 (30점) - 허위 시간 제한(15점), 허위 재고/수요(15점)
+3. 사회적 증거 조작 및 권위 도용 (20점) - 조작된 승인(10점), 과도한 지인 사례(10점)
+4. 언어적 결함 및 정보 은폐 (10점) - 비문(5점), 정보 은폐(5점)
+
+# Output Guidelines (JSON 형태 준수)
+1. `reliability_level`: "안전", "주의", "위험", "정보 부족" 중 하나 (0~35:안전 / 36~60:주의 / 61~100:위험)
+2. `summary`: 검증 결과를 바탕으로 **한 문장**으로 요약. (최대 50자 권장)
+3. `issues`: 광고의 문제점을 소비자가 즉각 인지하도록 **[수법: 구체적 사유]** 형식으로 작성. (항목당 20자 내외)
+4. `patent_check`: 제공받은 Step 2 검증 자료에 특허 관련 내용이 있을 경우에만 작성. 없으면 반드시 `null` 처리.
+5. `evidence`: Step 1 및 Step 2에서 확인된 핵심 근거 및 팩트 요약. **Step 1(구글 검색 그라운딩) 결과에 포함된 출처 링크([숫자](URL) 형태)를 찾아내어 `url` 항목에 반드시 원본 URL 문자열로 포함**하십시오.
+6. `consultation`: **1-2문장** 핵심 조언.
+7. `risk_score` : 평가된 의심 최종 성적 계산값.
+
+이후 제공되는 문맥을 읽고 지침에 따라 분석해 주세요.
+"""
+
+PROMPT = PROMPT_8
 
 SCRIPT = "아니, 아직도 안 믿으세요. 비문증 방치하면 실명이라니까요. 제가 김포에서 초등부 야구 감독으로 15년째인데요. 어느 날 연습 중에 애가 던진 공에 눈을 정통으로 맞은 거예요. 그때 치료 잘 받고 괜찮아졌다고 생각했는데 며칠 뒤부터 눈앞에 계속 날파리 같은게 떠다니는 거예요. 알고 보니 이게 눈 안에 무슨 유리채 찔꺼기가 뭉친 비문증이라요. 처음엔 시간 지나면 없어지겠지 했는데 경험 갔더니 실명 직전 남결합니다. 애들 가르치는 사람인데 실명이라니 순간 숨이 턱 막히더라고요. 그래서 제가 단원합니다. 이거 방치하면 막막 찢어지고 실명업입니다. 실명. 그런데 이거 먹고도 그대로면 제가 전재산 드리겠습니다. 딱 일주일만 먹어 보세요. 이건 진짜 국내 최초로 유일하게 비문개 선택을 받은 비문증 치료제예요. 다른 거랑은 비교도 하지 마세요. 하루에 한 번만 챙겨 드세요. 얼마나 편해요?이 좋은 걸 꾸준히 먹기만 하면 실명을 안 한다는데. 그리고 지금 아니면 고압량 제고는 구하지도 못해요. 3일루 후에 고압량 제거 단종된다고 공식 발표는 미루면 진짜 끝납니다."
 
@@ -651,6 +704,212 @@ def save_response_to_file(token_usage, prompt_text, response_text, folder_path="
         file.write(text)
     print(f"Response saved to {new_file_path}")
 
+@trace("Gemini Analysis (Full)")
+async def main(prompt, script):
+    load_dotenv()
+    api_key = os.getenv("api_key_grounding")
+    client = genai.Client(api_key=api_key)
+
+    # Init Logger
+    logger = GeminiDebugLogger()
+    total_usage = types.GenerateContentResponseUsageMetadata(
+        prompt_token_count=0,
+        candidates_token_count=0,
+        total_token_count=0
+    )
+
+    print("Gemini API 파이프라인 시작: 1단계 (구글 검색 그라운딩)")
+    config_step_1 = types.GenerateContentConfig(
+        tools=[types.Tool(google_search=types.GoogleSearch())],
+        temperature=0.1
+    )
+    
+    step_1_prompt = f"{PROMPT_STEP_1}\n\n[광고 스크립트]:\n{script}"
+    logger.log_api_call("user", f"[STEP 1: Google Search]\n{step_1_prompt}")
+    
+    start_api = time.perf_counter()
+    response_step_1 = client.models.generate_content(
+        model="gemini-3-flash-preview", 
+        contents=step_1_prompt,
+        config=config_step_1
+    )
+    profiler.log_manual("Gemini API: Step 1 (Search)", time.perf_counter() - start_api)
+    
+    step_1_result = response_step_1.text
+    # Capture Grounding/Search output logic properly
+    step_1_result_with_citations = add_citations(response_step_1)
+    
+    logger.log_api_call("model", step_1_result_with_citations)
+    if response_step_1.usage_metadata:
+        total_usage.prompt_token_count += response_step_1.usage_metadata.prompt_token_count
+        total_usage.candidates_token_count += response_step_1.usage_metadata.candidates_token_count
+        total_usage.total_token_count += response_step_1.usage_metadata.total_token_count
+
+    print("Gemini API 파이프라인 시작: 2단계 (KIPRIS MCP 검증)")
+    connector, kipris_tools = await get_singleton_connector()
+    step_2_result = ""
+    
+    try:
+        config_step_2 = types.GenerateContentConfig(
+            tools=[types.Tool(function_declarations=kipris_tools)],
+            temperature=0.1
+        )
+        
+        step_2_prompt = f"{PROMPT_STEP_2}\n\n[광고 스크립트]:\n{script}"
+        logger.log_api_call("user", f"[STEP 2: KIPRIS]\n{step_2_prompt}")
+        history_step_2 = [types.Content(role="user", parts=[types.Part(text=step_2_prompt)])]
+        
+        start_api = time.perf_counter()
+        response_step_2 = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=history_step_2,
+            config=config_step_2
+        )
+        profiler.log_manual("Gemini API: Step 2 (MCP Initiation)", time.perf_counter() - start_api)
+        
+        if response_step_2.usage_metadata:
+            total_usage.prompt_token_count += response_step_2.usage_metadata.prompt_token_count
+            total_usage.candidates_token_count += response_step_2.usage_metadata.candidates_token_count
+            total_usage.total_token_count += response_step_2.usage_metadata.total_token_count
+
+        res_text_s2 = response_step_2.text if response_step_2.candidates[0].content.parts and any(p.text for p in response_step_2.candidates[0].content.parts) else "[Tool Call Only]"
+        logger.log_api_call("model", f"[STEP 2 Init]\n{res_text_s2}",
+                            function_calls=[p.function_call for p in response_step_2.candidates[0].content.parts if p.function_call])
+
+        # MCP Tool Execution Loop
+        max_turns = 4
+        turn_count = 0
+        current_response_s2 = response_step_2
+        called_tools = set()
+        
+        while turn_count < max_turns and current_response_s2.candidates[0].content.parts and any(p.function_call for p in current_response_s2.candidates[0].content.parts):
+            turn_count += 1
+            history_step_2.append(current_response_s2.candidates[0].content)
+            
+            tool_parts = []
+            for part in current_response_s2.candidates[0].content.parts:
+                if part.function_call:
+                    name = part.function_call.name
+                    args = part.function_call.args
+                    
+                    if name == "google_search":
+                        continue
+                        
+                    # Prevent endless infinite loop with the same args
+                    call_sig = f"{name}-{args}"
+                    if call_sig in called_tools:
+                        print(f"로그: 중복 도구 호출 감지, 루프 종료 - {call_sig}")
+                        break
+                    called_tools.add(call_sig)
+                        
+                    print(f"로그: MCP 도구 호출 중 - {name}({args})")
+                    try:
+                        start_tool = time.perf_counter()
+                        result = await connector.call_tool(name, args)
+                        profiler.log_manual(f"KIPRIS Tool: {name}", time.perf_counter() - start_tool)
+                        
+                        content_text = "\n".join([c.text for c in result.content if hasattr(c, 'text')]) if hasattr(result, 'content') else str(result)
+                        logger.log_tool_result(name, content_text)
+                        tool_parts.append(types.Part.from_function_response(name=name, response={"result": content_text}))
+                    except Exception as e:
+                        print(f"도구 호출 오류 ({name}): {e}")
+                        tool_parts.append(types.Part.from_function_response(name=name, response={"error": str(e)}))
+                        
+            if tool_parts:
+                history_step_2.append(types.Content(role="tool", parts=tool_parts))
+                start_api = time.perf_counter()
+                current_response_s2 = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=history_step_2,
+                    config=config_step_2
+                )
+                profiler.log_manual(f"Gemini API: Step 2 Turn {turn_count}", time.perf_counter() - start_api)
+                
+                if current_response_s2.usage_metadata:
+                    total_usage.prompt_token_count += current_response_s2.usage_metadata.prompt_token_count
+                    total_usage.candidates_token_count += current_response_s2.usage_metadata.candidates_token_count
+                    total_usage.total_token_count += current_response_s2.usage_metadata.total_token_count
+                    
+                inner_text = current_response_s2.text if current_response_s2.candidates[0].content.parts and any(p.text for p in current_response_s2.candidates[0].content.parts) else "[Tool Call Only]"
+                logger.log_api_call("model", inner_text,
+                                    function_calls=[p.function_call for p in current_response_s2.candidates[0].content.parts if p.function_call])
+            else:
+                break
+                
+        step_2_result = current_response_s2.text if current_response_s2.candidates[0].content.parts and any(p.text for p in current_response_s2.candidates[0].content.parts) else "특허 검증 결과 획득 불가"
+        
+    finally:
+        await connector.disconnect()
+        print("로그: MCP 커넥터가 종료되었습니다.")
+
+    print("Gemini API 파이프라인 시작: 3단계 (최종 JSON 리포트 결합)")
+    
+    final_combined_prompt = f"""
+{PROMPT_8}
+
+=== 제공 문맥 ===
+[광고 스크립트 기반 원본]:
+{script}
+
+=== 단계별 검증 분석 결과 ===
+[Step 1: 구글 검색 그라운딩(일반 팩트) 결과]:
+{step_1_result_with_citations}
+
+[Step 2: KIPRIS 특허 검색 검증 결과]:
+{step_2_result}
+"""
+
+    if USE_JSON_OUTPUT:
+        config_final = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=AdAnalysisResult,
+            temperature=0.1
+        )
+    else:
+        config_final = types.GenerateContentConfig(temperature=0.1)
+
+    logger.log_api_call("user", f"[STEP 3: Final Integration]\n{final_combined_prompt}")
+    
+    start_api = time.perf_counter()
+    response_final = client.models.generate_content(
+        model="gemini-3-flash-preview", 
+        contents=final_combined_prompt,
+        config=config_final
+    )
+    profiler.log_manual("Gemini API: Final Step (Synthesize)", time.perf_counter() - start_api)
+
+    if response_final.usage_metadata:
+        total_usage.prompt_token_count += response_final.usage_metadata.prompt_token_count
+        total_usage.candidates_token_count += response_final.usage_metadata.candidates_token_count
+        total_usage.total_token_count += response_final.usage_metadata.total_token_count
+
+    final_text = response_final.text
+    logger.log_api_call("model", final_text)
+
+    print("\n[최종 3단계 분석 결과]\n")
+    if USE_JSON_OUTPUT:
+        try:
+            json_data = json.loads(final_text)
+            print(json.dumps(json_data, indent=2, ensure_ascii=False))
+        except json.JSONDecodeError:
+            print("JSON 파싱 실패:")
+            print(final_text)
+    else:
+        print(final_text)
+        
+    print("\n" + "="*50 + "\n")
+        
+    # Citation handling has already been processed for step_1. 
+
+    # Finalize Usage and Log
+    logger.set_usage(total_usage)
+    debug_path = logger.save()
+    print(f"\n[Debug] 상세 API 호출 흐름이 저장되었습니다: {debug_path}")
+
+    save_response_to_file(total_usage, PROMPT_8, final_text)
+
+    return final_text
+    
 @trace("Final Combined Analysis")
 async def evaluate_with_site_info(script_content, site_details, comments_data, discovery_data): # comments_data 추가
     discovery = discovery_data if discovery_data else {}

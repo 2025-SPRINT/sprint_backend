@@ -108,9 +108,9 @@ Invoke-RestMethod -Uri "http://localhost:5173/api/video/detect" `
 
 #### macOS / Linux
 ```bash
-curl -X POST https://uncloistral-pseudoheroical-milena.ngrok-free.dev/api/video/analyze \
+curl -X POST http://localhost:5173/api/video/analyze \
      -H "Content-Type: application/json" \
-     -d '{"url": "https://www.youtube.com/watch?v=BIdt96fKM-o"}'
+     -d '{"url": "https://www.youtube.com/watch?v=I5u6ATxWXbs"}'
 ```
 
 ```bash
