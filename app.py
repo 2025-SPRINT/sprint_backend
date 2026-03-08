@@ -332,7 +332,6 @@ import json
 import asyncio
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 # app.py 상단
 
 
@@ -340,7 +339,7 @@ from youtube_transcript_api.formatters import TextFormatter
 # gemini_main.py에서 분석 함수와 기본 프롬프트를 가져옵니다.
 from gemini_main import main as gemini_analyze, PROMPT
 
-from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+# youtube_transcript_api v1.0+: 예외 클래스는 except 블록에서 타입명으로 처리
 
 @app.route('/api/video/check-transcript', methods=['POST'])
 @trace("Route: Check Transcript Exists")
@@ -367,8 +366,9 @@ def check_transcript():
         }), 200
 
     try:
-        # 데이터 전체를 다운받지 않고 자막 메타데이터 목록만 빠르게 조회
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        # v1.0+: 인스턴스 메서드로 자막 메타데이터 목록 빠르게 조회
+        ytt_api = YouTubeTranscriptApi()
+        transcript_list = ytt_api.list(video_id)
         
         return jsonify({
             "status": "success",
@@ -378,18 +378,19 @@ def check_transcript():
             }
         }), 200
 
-    except (TranscriptsDisabled, NoTranscriptFound):
-        # 자막이 비활성화 되어 있거나 찾는 언어 자막이 없는 경우 (검증 실패)
-        return jsonify({
-            "status": "success",
-            "data": {
-                "is_valid": False,
-                "has_transcript": False,
-                "reason": "해당 영상에 자막이 제공되지 않습니다."
-            }
-        }), 200
-        
     except Exception as e:
+        error_name = type(e).__name__
+        # 자막이 비활성화 되어 있거나 찾는 언어 자막이 없는 경우 (검증 실패)
+        if error_name in ('TranscriptsDisabled', 'NoTranscriptFound', 'NoTranscriptAvailable'):
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "is_valid": False,
+                    "has_transcript": False,
+                    "reason": "해당 영상에 자막이 제공되지 않습니다."
+                }
+            }), 200
+        
         return jsonify({
             "status": "error",
             "message": f"자막 확인 중 오류 발생: {str(e)}"
@@ -498,7 +499,7 @@ def run_site_verification(video_url):
         "step2_deep_verification": step2_res
     }
     
-from youtube_transcript_api.formatters import TextFormatter
+# TextFormatter는 v1.0+에서 제거됨 — 수동 텍스트 변환 사용
 
 def get_youtube_transcript2(video_url, languages=['ko', 'en']):
     print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
@@ -514,28 +515,14 @@ def get_youtube_transcript2(video_url, languages=['ko', 'en']):
         # [DEBUG] 자막 불러오기 시도
         print(f"[DEBUG] Attempting to fetch transcript for {video_id} with languages={languages}")
         
-        # 혹시 모를 로직 에러 확인을 위해 단계별 프린트
-        # 만약 YouTubeTranscriptApi 자체가 static method만 지원한다면 여기서 터질 수 있음
-        # ytt_api = YouTubeTranscriptApi() -> 이 부분 확인 필요
-        
-        # 1. 표준적인 방법 (static method) 시도
-        try:
-            print("[DEBUG] Trying YouTubeTranscriptApi.get_transcript (Static Method)...")
-            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
-            print("[DEBUG] Success with static method.")
-        except Exception as e_static:
-            print(f"[DEBUG] Static method failed: {e_static}")
-            print("[DEBUG] Trying original user code (Instance Method)...")
-            
-            # 2. 기존 유저 코드 (Instance Method)
-            ytt_api = YouTubeTranscriptApi()
-            transcript = ytt_api.fetch(video_id, languages=languages)
-            print("[DEBUG] Success with instance method.")
+        # v1.0+: 인스턴스 메서드로 자막 직접 조회
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=languages)
+        print("[DEBUG] Success fetching transcript.")
 
-        # 순수 텍스트로 변환하여 Gemini 분석에 최적화
+        # 순수 텍스트로 변환하여 Gemini 분석에 최적화 (TextFormatter 대체)
         print("[DEBUG] Formatting transcript...")
-        formatter = TextFormatter()
-        formatted_text = formatter.format_transcript(transcript).strip()
+        formatted_text = "\n".join([snippet.text for snippet in transcript]).strip()
         print(f"[DEBUG] Formatted text length: {len(formatted_text)}")
         return formatted_text
 
