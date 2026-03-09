@@ -8,11 +8,11 @@ import json
 from yt_shorts import get_video_id, get_youtube_comments
 import asyncio
 from youtube_transcript_api import YouTubeTranscriptApi
-from gemini_main import main as gemini_analyze, PROMPT
 
 app = Flask(__name__)
 CORS(app) # 모든 origin에 대해 CORS 허용
 app.config['JSON_AS_ASCII'] = False
+app.json.ensure_ascii = False # Flask 2.2+ 에서 한글 깨짐 방지
 
 @app.after_request
 def after_each_request(response):
@@ -26,16 +26,6 @@ def home():
         "status": "success",
         "message": "Hello, World! Flask server is running."
     })
-
-def get_safe_metadata(result):
-    """result가 경로(str)면 파일을 읽고, 사전(dict)이면 그대로 반환"""
-    if isinstance(result, str):
-        json_path = os.path.join(result, "data_api_origin.json")
-        if os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                return json.load(f), result
-        return {}, result
-    return result, result.get("storage_path")
 
 # youtube_transcript_api v1.0+: 예외 클래스는 except 블록에서 타입명으로 처리
 
@@ -102,66 +92,57 @@ def analyze_video():
     video_id = get_video_id(video_url)
 
     async def run_analysis():
-        # 1. 자막 가져오기
-        task_transcript = asyncio.to_thread(get_youtube_transcript2, video_url)
-        
-        # 2. 사이트 추적 (tracer 인스턴스는 여기서만 사용)
-        task_site_trace = asyncio.to_thread(run_site_verification, video_url)
-        
-        # 3. [수정] yt_shorts.py에 정의된 독립 함수를 직접 호출 (가장 안전)
-        from yt_shorts import get_youtube_comments
-        task_comments = asyncio.to_thread(get_youtube_comments, video_url) # video_url 전달
-
+        # 1~3. 자막, 사이트 분석, 댓글을 병렬 수집
         script_text, trust_report, comments_raw = await asyncio.gather(
-            task_transcript, task_site_trace, task_comments
+            asyncio.to_thread(get_youtube_transcript2, video_url),
+            asyncio.to_thread(run_site_verification, video_url),
+            asyncio.to_thread(get_youtube_comments, video_url),
         )
 
-        # 댓글 데이터(리스트)를 Gemini가 읽기 좋게 문자열로 변환
-        if isinstance(comments_raw, list):
-            comments_text = " | ".join([c['text'] for c in comments_raw])
-        else:
-            comments_text = str(comments_raw)
+        # 댓글 데이터를 Gemini가 읽기 좋은 문자열로 변환
+        comments_text = (
+            " | ".join(c['text'] for c in comments_raw)
+            if isinstance(comments_raw, list)
+            else str(comments_raw)
+        )
 
-        # 4. Gemini 분석 호출
-        from gemini_main import evaluate_with_site_info
-        report = await evaluate_with_site_info(
-                                                script_text, 
-                                                trust_report.get('step2_deep_verification'), # 웹사이트 상세 분석 결과
-                                                comments_text,                                # 댓글 데이터
-                                                trust_report.get('step1_video_discovery')    # 브랜드/법인/상품명 추출 결과 (이게 누락됨!)
-                                            )
-        
-        return (script_text, trust_report, report, comments_text), None
+        # 4. Gemini 분석 — 각 데이터를 역할에 맞게 분리 전달
+        from gemini_main import analyze_ad
+        report = await analyze_ad(
+            script_text=script_text,
+            site_details=trust_report.get('step2_deep_verification'),
+            comments_data=comments_text,
+            discovery_data=trust_report.get('step1_video_discovery'),
+        )
+
+        return script_text, trust_report, report, comments_text
 
     try:
-        result, error = asyncio.run(run_analysis())
-        script_text, trust_report, report, comments_data = result
+        script_text, trust_report, report, comments_data = asyncio.run(run_analysis())
 
         try:
-            # Gemini 응답이 문자열일 경우 JSON 파싱
             analysis_result = json.loads(report) if isinstance(report, str) else report
-        except:
+        except (json.JSONDecodeError, TypeError):
             analysis_result = report
 
-        # DB 저장 시도
+        # DB 저장
         try:
-            client_ip = request.remote_addr
-            user_agent = request.headers.get('User-Agent', '')
             db_handler.save_analysis_result({
                 "video_id": video_id,
                 "script_analysis": analysis_result,
                 "trust_report": trust_report,
-                "client_ip": client_ip,
-                "user_agent": user_agent
+                "client_ip": request.remote_addr,
+                "user_agent": request.headers.get('User-Agent', ''),
             })
-        except: pass
+        except Exception:
+            pass
 
         return jsonify({
             "status": "success",
             "data": {
                 "video_id": video_id,
                 "analysis_result": analysis_result,
-                "site_info": trust_report
+                "site_info": trust_report,
             }
         })
 
