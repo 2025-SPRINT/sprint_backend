@@ -12,6 +12,12 @@ from utils.profiler import trace, profiler
 import time
 
 # =====================================================
+# Global Configuration
+# =====================================================
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_TEMPERATURE = 0.1
+
+# =====================================================
 # Debug Logger
 # =====================================================
 
@@ -270,7 +276,7 @@ async def _step1_fact_check(client, script_text, logger, total_usage):
     
     config = types.GenerateContentConfig(
         tools=[types.Tool(google_search=types.GoogleSearch())],
-        temperature=0.1
+        temperature=GEMINI_TEMPERATURE
     )
     
     prompt = f"{PROMPT_STEP_1}\n\n[광고 스크립트]:\n{script_text}"
@@ -278,7 +284,7 @@ async def _step1_fact_check(client, script_text, logger, total_usage):
     
     start = time.perf_counter()
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model=GEMINI_MODEL,
         contents=prompt,
         config=config
     )
@@ -300,7 +306,7 @@ async def _step2_patent_check(client, script_text, logger, total_usage):
     
     config = types.GenerateContentConfig(
         tools=[types.Tool(function_declarations=kipris_tools)],
-        temperature=0.1
+        temperature=GEMINI_TEMPERATURE
     )
     
     prompt = f"{PROMPT_STEP_2}\n\n[광고 스크립트]:\n{script_text}"
@@ -309,7 +315,7 @@ async def _step2_patent_check(client, script_text, logger, total_usage):
     
     start = time.perf_counter()
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model=GEMINI_MODEL,
         contents=history,
         config=config
     )
@@ -369,7 +375,7 @@ async def _step2_patent_check(client, script_text, logger, total_usage):
         history.append(types.Content(role="tool", parts=tool_parts))
         start = time.perf_counter()
         current_response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model=GEMINI_MODEL,
             contents=history,
             config=config
         )
@@ -419,14 +425,14 @@ async def _step3_synthesize(client, script_text, site_details, comments_data,
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=AdAnalysisResult,
-        temperature=0.1
+        temperature=GEMINI_TEMPERATURE
     )
 
     logger.log_api_call("user", f"[STEP 3: Final Integration]\n{final_prompt}")
     
     start = time.perf_counter()
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model=GEMINI_MODEL,
         contents=final_prompt,
         config=config
     )
@@ -475,9 +481,11 @@ async def analyze_ad(script_text, site_details=None, comments_data=None, discove
         total_token_count=0
     )
 
-    # Step 1 & 2: 자막만 전달하여 팩트체크 / 특허검증
-    step1_result = await _step1_fact_check(client, script_text, logger, total_usage)
-    step2_result = await _step2_patent_check(client, script_text, logger, total_usage)
+    # Step 1 & 2: 자막만 전달하여 팩트체크 / 특허검증 (병렬 실행)
+    step1_result, step2_result = await asyncio.gather(
+        _step1_fact_check(client, script_text, logger, total_usage),
+        _step2_patent_check(client, script_text, logger, total_usage),
+    )
 
     # Step 3: 모든 정보를 통합하여 최종 리포트 생성
     final_text = await _step3_synthesize(

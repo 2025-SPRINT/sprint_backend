@@ -27,6 +27,75 @@ def home():
         "message": "Hello, World! Flask server is running."
     })
 
+# ==========================================
+# 2. [순호] 기본 영상 정보 조회 (Fast)
+# ==========================================
+@app.route('/api/video/info', methods=['POST'])
+@trace("Route: Get video info")
+def get_video_info():
+    data = request.get_json(silent=True) or {}
+    url = data.get("url")
+    if not url: return jsonify({"status": "error", "message": "URL 필요"}), 400
+
+    try:
+        # 1. 변수 정의 (NameError 해결 포인트)
+        api_key = os.getenv("Youtube_API_Key") # 변수명을 명확히 할당
+        v_id = get_video_id(url)
+        
+        # [NEW] DB에서 기존 정보 확인
+        from models.dynamodb import db_handler
+        cached_info = db_handler.get_analysis_result(v_id)
+        if cached_info and cached_info.get("title"):
+             print(f"✅ [Cache Hit] Returning cached info for {v_id}")
+             return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": v_id, 
+                    "title": cached_info.get("title"),
+                    "channel_name": cached_info.get("channel_name"), 
+                    "published_at": cached_info.get("published_at"), 
+                    "thumbnail_url": cached_info.get("thumbnail_url"), 
+                    "cached": True
+                }
+            })
+
+        # 2. 영상 다운로드(yt-dlp) 없이 메타데이터만 호출 (속도 개선)
+        from yt_shorts import get_metadata_only # 새로 만든 함수 임포트
+        item = get_metadata_only(api_key, v_id)
+        
+        if not item:
+            return jsonify({"status": "error", "message": "영상을 찾을 수 없습니다."}), 404
+
+        snippet = item.get('snippet', {})
+        stats = item.get('statistics', {})
+
+        # 3. 이상적인 명세서(Ideal Spec) 규격에 맞춘 응답 구성 
+        response_data = {
+            "video_id": v_id, 
+            "title": snippet.get("title"),
+            "channel_name": snippet.get("channelTitle"), 
+            "published_at": snippet.get("publishedAt"), 
+            "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url")
+            }
+
+        # [NEW] DB 저장 (Partial Update)
+        try:
+            client_ip = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
+            response_data["client_ip"] = client_ip
+            response_data["user_agent"] = user_agent
+            db_handler.save_analysis_result(response_data)
+        except Exception as e:
+            print(f"⚠️ [DB Error] {e}")
+
+        return jsonify({
+            "status": "success",
+            "data": response_data
+        })
+    except Exception as e:
+        # 에러 메시지를 구체적으로 확인하기 위해 e 출력
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 # youtube_transcript_api v1.0+: 예외 클래스는 except 블록에서 타입명으로 처리
 
 @app.route('/api/video/check-transcript', methods=['POST'])
