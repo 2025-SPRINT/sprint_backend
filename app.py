@@ -158,98 +158,124 @@ app.json.ensure_ascii = False
 tracer = LinkTracer()
 
 @app.route('/api/video/analyze', methods=['POST'])
-@trace("Route: Integrated Video & Site Analysis")
+@trace("Route: Integrated Video & Site Analysis (AD-ASTRA Final)")
 def analyze_video():
     data = request.get_json()
     video_url = data.get('url')
+    
     if not video_url:
         return jsonify({"status": "error", "message": "URL 필요"}), 400
         
-    video_id = get_video_id(video_url)
+    video_id = tracer.extract_video_id(video_url)
 
     # 1. DB 캐시 확인
     cached = db_handler.get_analysis_result(video_id)
-    if cached and "script_analysis" in cached and "trust_report" in cached:
-        print(f"📦 [Cache Hit] 기존 데이터 반환: {video_id}")
-        # 캐시된 데이터를 보낼 때도 한글 보존을 위해 직접 응답 생성
-        final_res = {
-            "status": "success",
-            "data": {
-                "video_id": video_id,
-                "analysis_result": cached["script_analysis"],
-                "site_info": cached["trust_report"],
-                "cached": True
-            }
-        }
-        return Response(json.dumps(final_res, ensure_ascii=False), mimetype='application/json')
+    if cached and "analysis_result" in cached:
+        return Response(json.dumps({"status": "success", "data": cached}, ensure_ascii=False), mimetype='application/json')
+
+    # 2. 통합 분석 실행 함수 (LinkTracer + Gemini Analyze AD)
+    async def run_analysis():
+        # (1) LinkTracer를 통해 브랜드/사이트/자막/댓글 수집 및 1차 분석
+        # 이 과정에서 tracer.analyze 내부의 수집 로직을 활용합니다.
+        # hint_data가 없으면 tracer가 알아서 API를 호출합니다.
+        trust_report = await asyncio.to_thread(tracer.analyze, video_url)
+        
+        # (2) 필요한 텍스트 데이터 추출 (LinkTracer가 수집한 데이터 활용)
+        # 만약 tracer.analyze 결과에 script나 comments가 포함되도록 tracer 클래스를 수정했다면 그것을 쓰고,
+        # 아니면 여기서 다시 수집합니다.
+        script_text = await asyncio.to_thread(tracer.get_transcript, video_id)
+        comments_text = await asyncio.to_thread(tracer.get_comments, video_id)
+
+        # (3) [핵심] Gemini 2차 심화 분석 실행
+        from gemini_main import analyze_ad
+        report = await analyze_ad(
+        script_text=script_text,
+        site_details=trust_report.get('trust_analysis', '정보 없음'), 
+        comments_data=comments_text,
+        # 딕셔너리 객체를 그대로 넘겨주거나, 필요한 키를 가진 새 딕셔너리를 만듭니다.
+        discovery_data={
+            "brand": trust_report.get('brand', '미확인'),
+            "evidence": trust_report.get('evidence', '근거 없음')
+            }, 
+        )
+
+        return script_text, trust_report, report, comments_text
 
     try:
-        # 2. 통합 분석 실행
-        hint_data = cached if cached and cached.get('title') else None
-        integrated_report = tracer.analyze(video_url, hint_data=hint_data)
+        # 비동기 실행 및 데이터 언패킹 (민석 님이 요청하신 4개 변수 구조)
+        script_text, trust_report, report, comments_data = asyncio.run(run_analysis())
 
-        # 3. 데이터 매핑
-        script_analysis_data = {
-            "brand": integrated_report.get("brand"),
-            "corporate_name": integrated_report.get("Corporate Name"),
-            "product_name": integrated_report.get("product_name"),
-            "evidence": integrated_report.get("evidence"),
-            "landing_page_url": integrated_report.get("fined_landing_page")
-        }
+        # JSON 파싱 안전 처리
+        try:
+            analysis_result = json.loads(report) if isinstance(report, str) else report
+        except (json.JSONDecodeError, TypeError):
+            analysis_result = report
 
-        trust_report_data = {
-            "step1_video_discovery": {
-                "brand": integrated_report.get("brand"),
-                "product_name": integrated_report.get("product_name"),
-                "landing_page_url": integrated_report.get("fined_landing_page")
-            },
-            "step2_deep_verification": {
-                "analysis_case": integrated_report.get("analysis_case"),
-                "trust_analysis": integrated_report.get("trust_analysis"),
-                "review": integrated_report.get("review")
-            }
-        }
-
-        # 4. DB 저장
+        # 3. DB 저장 페이로드
         save_payload = {
             "video_id": video_id,
-            "script_analysis": script_analysis_data,
-            "trust_report": trust_report_data,
+            "script_analysis": analysis_result, # 최종 Gemini 리포트
+            "trust_report": trust_report,        # LinkTracer가 찾은 사이트/브랜드 정보
+            "script_text": script_text,
             "client_ip": request.remote_addr,
-            "user_agent": request.headers.get('User-Agent', '')
+            "user_agent": request.headers.get('User-Agent', ''),
         }
-        if cached:
-            cached.update(save_payload)
-            db_handler.save_analysis_result(cached)
-        else:
-            db_handler.save_analysis_result(save_payload)
+        
+        db_handler.save_analysis_result(save_payload)
 
-        # 5. [핵심] 최종 응답 생성 (한글 깨짐 방지)
+        # 4. 최종 응답
         final_result = {
             "status": "success",
             "data": {
                 "video_id": video_id,
-                "analysis_result": script_analysis_data,
-                "site_info": trust_report_data,
+                "analysis_result": analysis_result,
+                "site_info": trust_report,
             }
         }
         
-        # ensure_ascii=False로 설정하여 한글을 유니코드 이스케이프 없이 그대로 직렬화
-        json_string = json.dumps(final_result, ensure_ascii=False)
-        
-        # Flask Response를 생성하며 데이터와 타입, 인코딩을 명시함
         return Response(
-            response=json_string,
+            response=json.dumps(final_result, ensure_ascii=False),
             status=200,
             mimetype='application/json',
             content_type='application/json; charset=utf-8'
         )
-
-    except Exception as e:
+    
+    except Exception as e:  # 이 블록이 누락되었는지 확인하세요!
         import traceback
         print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+def get_youtube_transcript2(video_url, languages=['ko', 'en']):
+    print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
+    from yt_shorts import get_video_id
+    video_id = get_video_id(video_url) # 다양한 URL 지원
+    print(f"[DEBUG] Extracted Video ID: {video_id}")
 
+    if not video_id: 
+        print("[DEBUG] Failed to extract Video ID.")
+        return None
+
+    try:
+        # [DEBUG] 자막 불러오기 시도
+        print(f"[DEBUG] Attempting to fetch transcript for {video_id} with languages={languages}")
+        
+        # v1.0+: 인스턴스 메서드로 자막 직접 조회
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=languages)
+        print("[DEBUG] Success fetching transcript.")
+
+        # 순수 텍스트로 변환하여 Gemini 분석에 최적화 (TextFormatter 대체)
+        print("[DEBUG] Formatting transcript...")
+        formatted_text = "\n".join([snippet.text for snippet in transcript]).strip()
+        print(f"[DEBUG] Formatted text length: {len(formatted_text)}")
+        return formatted_text
+
+    except Exception as e:
+        print(f"❌ [ERROR] get_youtube_transcript2 failed: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return None
+    
 ############## 건드리지 말 것 ##############
 
 if __name__ == '__main__':
