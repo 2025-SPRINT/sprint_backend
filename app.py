@@ -80,10 +80,6 @@ def get_video_info():
 
         # [NEW] DB 저장 (Partial Update)
         try:
-            client_ip = request.remote_addr
-            user_agent = request.headers.get('User-Agent', '')
-            response_data["client_ip"] = client_ip
-            response_data["user_agent"] = user_agent
             db_handler.save_analysis_result(response_data)
         except Exception as e:
             print(f"⚠️ [DB Error] {e}")
@@ -158,6 +154,7 @@ def check_transcript():
 def analyze_video():
     data = request.get_json()
     video_url = data.get('url')
+    device_id = data.get('device_id')
     video_id = get_video_id(video_url)
 
     async def run_analysis():
@@ -214,8 +211,7 @@ def analyze_video():
                 "video_id": video_id,
                 "script_analysis": analysis_result,
                 "trust_report": trust_report,
-                "client_ip": request.remote_addr,
-                "user_agent": request.headers.get('User-Agent', ''),
+                "device_id": device_id,
             })
         except Exception:
             pass
@@ -334,13 +330,9 @@ def trace_link_and_trust():
         # 3. 결과 DB 저장
         # [수정] 분석된 리포트뿐만 아니라, 분석 과정에서 사용된 메타데이터도 함께 업데이트/보존합니다.
         try:
-            client_ip = request.remote_addr
-            user_agent = request.headers.get('User-Agent', '')
             db_handler.save_analysis_result({
                 "video_id": v_id,
-                "trust_report": final_report,
-                "client_ip": client_ip,
-                "user_agent": user_agent
+                "trust_report": final_report
             })
         except: pass
 
