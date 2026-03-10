@@ -159,10 +159,14 @@ def analyze_video():
 
     async def run_analysis():
         # 1~3. 자막, 사이트 분석, 댓글을 병렬 수집
+        @trace("Data: YouTube Comments")
+        def _get_comments(url):
+            return get_youtube_comments(url)
+
         script_text, trust_report, comments_raw = await asyncio.gather(
             asyncio.to_thread(get_youtube_transcript2, video_url),
             asyncio.to_thread(run_site_verification, video_url),
-            asyncio.to_thread(get_youtube_comments, video_url),
+            asyncio.to_thread(_get_comments, video_url),
         )
 
         # 댓글 데이터를 Gemini가 읽기 좋은 문자열로 변환
@@ -231,6 +235,7 @@ def analyze_video():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # 사이트 분석 로직을 별도 함수로 분리 (병렬 처리를 위해)
+@trace("Data: Site Verification")
 def run_site_verification(video_url):
     from site_analyzer import LinkTracer, BrandTrustAnalyzer
     tracer = LinkTracer()
@@ -255,6 +260,7 @@ def run_site_verification(video_url):
     }
     
 # TextFormatter는 v1.0+에서 제거됨 — 수동 텍스트 변환 사용
+@trace("Data: YouTube Transcript")
 def get_youtube_transcript2(video_url, languages=['ko', 'en']):
     print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
     from yt_shorts import get_video_id
