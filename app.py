@@ -187,6 +187,20 @@ def analyze_video():
         return script_text, trust_report, report, comments_text
 
     try:
+        # [NEW] DB 캐시 확인 — 이미 분석된 결과가 있으면 즉시 반환
+        cached = db_handler.get_analysis_result(video_id)
+        if cached and "script_analysis" in cached:
+            print(f"✅ [Cache Hit] Returning cached analysis for {video_id}")
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "video_id": video_id,
+                    "analysis_result": cached["script_analysis"],
+                    "site_info": cached.get("trust_report"),
+                    "cached": True,
+                }
+            })
+
         script_text, trust_report, report, comments_data = asyncio.run(run_analysis())
 
         try:
