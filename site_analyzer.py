@@ -1,10 +1,6 @@
-#썸네일 o 버전
-
 import os
-import yt_dlp
 import re
 import json
-import time
 import requests
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
@@ -32,14 +28,14 @@ class LinkTracer:
                 part="snippet",
                 videoId=video_id,
                 maxResults=max_results,
-                order="relevance" # 관련성 높은 댓글 우선
+                order="relevance"
             )
             response = request.execute()
             comments = [item['snippet']['topLevelComment']['snippet']['textDisplay'] for item in response.get('items', [])]
             return " | ".join(comments) if comments else "댓글 없음"
         except Exception as e:
             print(f"⚠️ [Comment Error] {e}")
-            return "댓글 기능을 사용할 수 없거나 댓글이 없습니다."
+            return "댓글 없음"
 
     def extract_video_id(self, url):
         patterns = [r'shorts/([\w-]+)', r'v=([\w-]+)', r'be/([\w-]+)']
@@ -52,7 +48,6 @@ class LinkTracer:
         try:
             response = requests.get(url, timeout=10)
             if response.status_code == 200:
-                # 바이너리 데이터를 반환하거나 임시 파일로 저장
                 return response.content
             return None
         except Exception as e:
@@ -65,28 +60,20 @@ class LinkTracer:
             return TextFormatter().format_transcript(transcript).replace('\n', ' ').strip()
         except: return "자막 없음"
 
-    def verify_url(self, url):
-        try:
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-            response = requests.get(url, headers=headers, timeout=7, allow_redirects=True)
-            if 200 <= response.status_code < 300:
-                return True, response.url
-            return False, None
-        except:
-            return False, None
-
     def analyze_with_gemini_text(self, context_info, image_bytes=None, retry_count=0):
         MAX_RETRIES = 3
+        # 프롬프트 내용은 그대로 유지 (길이 관계상 생략하지만 코드에는 포함되어야 함)
         prompt = f"""
 
-        당신은 광고 유입 경로를 추적하는 마케팅 데이터 전문가입니다.
-제공된 **[메타 데이터]**와 **[썸네일 이미지]**를 심층 분석하여, 소비자가 최종 도달하게 될 '최정점의 구매 페이지'를 결정하세요.
+Role: 마케팅 데이터 추적 및 기업 실사 통합 전문가
+Task: 영상 메타데이터와 썸네일을 분석하여 유입 경로(URL)를 찾고, 해당 사이트의 신뢰성을 즉시 검증하십시오
 
 [데이터 정보]
 메타 데이터: {context_info}
 썸네일 이미지: (사용자가 업로드한 이미지 파일)
 
 [분석 지침]
+Step 1. 멀티모달 분석: 메타데이터를 활용하여 브랜드(또는 회사명)와 상품명(또는 서비스명)을 추측하세요.
 1. 멀티모달 분석: 메타데이터를 활용하여 브랜드(또는 회사명)와 상품명(또는 서비스명)을 추측하세요. 
  - **중요: 추측할 때 썸네일을 참고하되, 썸네일에 명시적인 로고가 없거나 아예 연관이 없는 텍스트가 포함될 수 있으므로 썸네일로 추측한 내용은 가장 마지막 단계에서 검증하는 용도로만 활용하세요.
  - 메타데이터를 분석할 때 명시적인 정보 뿐만 아니라 맥락을 파악하여 광고가 홍보하는 브랜드와 제품명을 찾아야합니다.
@@ -112,15 +99,69 @@ class LinkTracer:
 
 5. 노이즈 제거: 커뮤니티 게시글, 유튜브 링크, 뉴스 기사 URL은 후보에서 절대 제외하세요.
 
-6. 응답은 반드시 아래 JSON 형식으로 하며, JSON 이외의 어느 설명이나 텍스트도 포함하지 마세요.
+Step 2. URL 검증 및 신뢰도 분석
+1. URL 검증: 후보군으로 도출된 URL들이 실제로 접속 가능한 사이트인지 검증하세요. (HTTP 상태 코드, 페이지 로딩 여부, 리디렉션 등)
+
+2. 신뢰도 분석: 접속 가능한 URL이 발견되면, 해당 페이지에서 브랜드 신뢰도 분석을 수행하세요. (예: 사이트 내 '회사 소개', '연락처', '사업자 정보' 등 공식 정보의 존재 여부와 그 내용의 신뢰성 평가)
+[조사 지침]
+먼저 이 페이지가 '브랜드/기업의 메인 사이트'인지 아니면 '특정 제품의 상세 판매 페이지'인지 판단한 후 아래 지침에 따라 분석 후, [출력 JSON 구조 가이드]에 맞게 내용을 정리해서 JSON으로 응답하십시오.
+
+  ### 케이스 A: [브랜드/기업 메인 사이트]인 경우
+
+
+
+                [조사 지침]
+
+                1. 브랜드/기업 정체성: 이 사이트가 무엇을 하는 곳인지 페이지 내 텍스트를 바탕으로 정의하세요.
+
+                2. 공식 근거(Claims) 수집: 사이트 내에 명시된 '특허 번호', '인증(KC, FDA 등)', '성분/기술 근거'를 찾아 리스트업하세요. 추측은 절대 금지하며, 내용이 없다면 반드시 "해당 정보 없음"이라고 명시하세요.
+
+                3. 운영 주체 정보: 사이트 하단(Footer) 등에 기재된 법인명, 사업자 번호 등 공식 운영 주체 정보를 확인하세요.
+
+
+
+                ### 케이스 B: [제품 상세 판매 페이지]인 경우
+
+                [조사 지침]
+
+                1. 타겟 제품 매칭(Product Matching):
+
+                -현재 페이지가 우리가 찾는 '타겟 제품'에 대한 정보를 담고 있는지 최우선으로 확인하십시오.
+
+                -여러 옵션이 섞여 있다면, 반드시 '타겟 제품'과 직접 관련된 정보만 선별하십시오.
+
+
+
+                2. 화면 내 데이터 전수 조사 (스크롤 및 텍스트 추출):
+
+                -원산지/제조원: 실제 생산지 및 제조사 정보를 명시하십시오.
+
+                -인증/품질 증거: HACCP, KC인증번호, 당도(Brix), 성분 분석표 등 화면에 '텍스트'나 '이미지 내 글자'로 존재하는 데이터만 추출하십시오.
+
+                -구매자 리뷰 분석: 실제 구매평 섹션을 분석하여 (1) 주요 긍정 피드백과 (2) 반복되는 불만 사항을 요약하십시오. 리뷰가 없다면 "등록된 리뷰 없음"으로 기재하십시오.
+
+
+
+                3.환각 방지 및 데이터 격리 (Strict Rule):
+
+                -외부 지식 차단: 당신이 기존에 알고 있던 상식이나 외부 정보를 완전히 배제하고, 오직 현재 페이지에 노출된 데이터만 사용하십시오.
+
+                -추론 금지: "있을 것으로 보임", "우수할 것으로 추정됨"과 같은 추측성 단어 사용 시 오답으로 간주합니다. 정보가 없으면 "페이지 내 근거 확인 불가"라고 단호하게 답변하십시오.
+
+3. 응답은 반드시 아래 JSON 형식으로 하며, JSON 이외의 어느 설명이나 텍스트도 포함하지 마세요.
  
+
 JSON 응답 형식:
  {{
  "brand": "식별된 브랜드명",
  "Corporate Name": "법인명",
  "product_name": "상품명",
  "landing_page_candidates": ["URL1", "URL2", "URL3"],
-"evidence": "검색 결과의 어떤 정보를 바탕으로 결정했는지 상세 기술"
+ "fined_landing_page": "최종적으로 검증된 URL (유효한 링크가 없으면 '유효한 링크 없음'으로 표기)",
+ "evidence": "검색 결과의 어떤 정보를 바탕으로 url을 결정했는지 상세 기술",
+ "analysis_case": "CASE_A 또는 CASE_B",
+ "trust_analysis": "검증된 URL이 존재할 경우, 해당 페이지에서 확인된 브랜드/타겟제품 신뢰도 분석 결과를 간략히 기술 (예: '공식 정보 존재', '연락처 및 사업자 정보 확인됨', '신뢰도 낮음' 등)",
+ "review": "검증된 URL이 존재할 경우, 해당 페이지의 구매자 리뷰 분석 결과를 간략히 기술 (예: '긍정적 리뷰 다수', '부정적 리뷰 다수', '리뷰 없음' 등)",
 }}
 
             """
@@ -130,201 +171,57 @@ JSON 응답 형식:
             contents.append(types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"))
 
         try:
+            # 모델명은 최신 안정화 버전인 gemini-2.0-flash 권장
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", # 모델명 오타 확인 (2.5 -> 2.0 등 환경에 맞게)
+                model="gemini-2.5-flash", 
                 contents=contents,
                 config=types.GenerateContentConfig(tools=[{"google_search": {}}])
             )
 
             raw_text = response.text.strip()
             
-            # JSON 추출 로직
-            json_pattern = re.compile(r'```(?:json)?\s*(\{.*?\})\s*```', re.DOTALL)
+            # JSON 추출 정규식
+            json_pattern = re.compile(r'(\{.*\})', re.DOTALL)
             match = json_pattern.search(raw_text)
-            
-            if match:
-                json_str = match.group(1)
-            else:
-                fallback_pattern = re.compile(r'(\{.*\})', re.DOTALL)
-                fallback_match = fallback_pattern.search(raw_text)
-                json_str = fallback_match.group(1) if fallback_match else raw_text
+            target_str = match.group(1) if match else raw_text
 
-            res_data = json.loads(json_str, strict=False)
+            # [핵심] JSON 로드 시 인코딩 문제 방지를 위해 strict=False 사용
+            res_data = json.loads(target_str, strict=False)
+            
+            if res_data.get('fined_landing_page') == "유효한 링크 없음" and retry_count < MAX_RETRIES:
+                print(f"🔄 재시도 중... ({retry_count + 1}/{MAX_RETRIES})")
+                return self.analyze_with_gemini_text(context_info, image_bytes, retry_count + 1)
+            
+            return res_data
             
         except Exception as e:
             print(f"❌ [Gemini API Error] {e}")
-            res_data = {"landing_page_candidates": [], "brand": "분석 실패", "evidence": str(e)}
-
-        # URL 검증 부분
-        candidates = res_data.get('landing_page_candidates', [])
-        final_url = "유효한 링크 없음"
-        
-        for url in candidates:
-            is_live, real_url = self.verify_url(url)
-            if is_live:
-                final_url = real_url
-                break
-
-        # 재시도 로직 (메서드 이름 변경에 맞춰 수정)
-        if final_url == "유효한 링크 없음" and retry_count < MAX_RETRIES:
-            retry_count += 1
-            print(f"⚠️ [Retry {retry_count}/{MAX_RETRIES}] 유효한 링크가 발견되지 않아 재시도합니다...")
-            # 재시도 시 약간의 대기 시간을 주어 API 할당량 문제를 방지할 수 있습니다.
-            time.sleep(1) 
-            return self.analyze_with_gemini_text(context_info, image_bytes, retry_count=retry_count)
-        
-        res_data['landing_page_url'] = final_url
-        return res_data
+            return {"landing_page_candidates": [], "brand": "분석 실패", "evidence": str(e)}
 
     def analyze(self, url, hint_data=None):
         v_id = self.extract_video_id(url)
-        thumbnail_url = None
         
-        # 1. 메타데이터 결정 (DB 혹은 API)
-        if hint_data and hint_data.get('title') and hint_data.get('channel_name'):
+        if hint_data and hint_data.get('title'):
             print(f"📦 [Cache Hit] DB 메타데이터 사용: {v_id}")
             channel_name = hint_data.get('channel_name')
             title = hint_data.get('title')
             description = hint_data.get('description', '설명 없음')
-            thumbnail_url = hint_data.get('thumbnail_url') # DB에서 URL 가져옴
+            thumbnail_url = hint_data.get('thumbnail_url')
         else:
             print(f"🌐 [API Call] 유튜브 API 호출: {v_id}")
             video_res = self.youtube.videos().list(part='snippet', id=v_id).execute()
-            if not video_res['items']:
-                raise ValueError("영상을 찾을 수 없습니다.")
+            if not video_res['items']: raise ValueError("영상을 찾을 수 없습니다.")
             snippet = video_res['items'][0]['snippet']
             channel_name = snippet.get('channelTitle')
             title = snippet.get('title')
             description = snippet.get('description')
             thumbnails = snippet.get('thumbnails', {})
-            thumbnail_url = (thumbnails.get('maxres') or 
-                             thumbnails.get('high') or 
-                             thumbnails.get('default', {})).get('url')
+            thumbnail_url = (thumbnails.get('maxres') or thumbnails.get('high') or thumbnails.get('default', {})).get('url')
 
-        # 2. 이미지 다운로드 (DB에서 가져왔든 API에서 가져왔든 '분석'을 위해 다운로드 실행)
-        # Gemini에게 '이미지' 자체를 전달해야 하므로 바이트화가 필요합니다.
         image_bytes = self.download_image(thumbnail_url) if thumbnail_url else None
-
-        # 3. 동적 데이터(자막, 댓글) 수집
         transcript = self.get_transcript(v_id)
         comments = self.get_comments(v_id)
 
-        context_text = f"""
-        채널명: {channel_name}
-        영상제목: {title}
-        영상설명: {description}
-        영상자막: {transcript}
-        주요댓글: {comments}
-        """
+        context_text = f"채널명: {channel_name}\n영상제목: {title}\n영상설명: {description}\n영상자막: {transcript}\n주요댓글: {comments}"
         
-        # 4. 멀티모달 분석 수행 (텍스트 + 이미지 바이트)
         return self.analyze_with_gemini_text(context_text, image_bytes)
-
-class BrandTrustAnalyzer:
-    def __init__(self, client):
-        self.client = client
-        self.model_id = "gemini-2.5-flash" 
-
-    def generate_trust_report(self, target_url: str, product_name: str, brand: str, max_retries=5):
-        """
-        최대 max_retries번 재시도하며 사이트 분석을 수행합니다.
-        """
-        last_error = ""
-        
-        for attempt in range(max_retries):
-            try:
-                print(f"🔄 [Attempt {attempt + 1}/{max_retries}] 분석 시작: {target_url}")
-                
-                # 시도 횟수에 따라 프롬프트에 약간의 강조를 추가 (강박적 검색 유도)
-                extra_instruction = ""
-                if attempt > 0:
-                    extra_instruction = "\n⚠️ 이전 시도에서 정보를 찾지 못했습니다. 이번에는 더 깊게 검색하고 페이지의 푸터(Footer)까지 샅샅이 확인하세요."
-
-                prompt = f"""
-                당신은 기업 실사 및 제품 검증 전문가입니다. 제공된 URL({target_url})에 직접 접속하여, 먼저 이 페이지가 '브랜드/기업의 메인 사이트'인지 아니면 '특정 제품의 상세 판매 페이지'인지 판단한 후 아래 지침에 따라 분석 후, [출력 JSON 구조 가이드]에 맞게 내용을 정리해서 JSON으로 응답하십시오.
-
-                ### 케이스 A: [브랜드/기업 메인 사이트]인 경우
-
-                [조사 지침]
-                1. 브랜드/기업 정체성: 이 사이트가 무엇을 하는 곳인지 페이지 내 텍스트를 바탕으로 정의하세요.
-                2. 공식 근거(Claims) 수집: 사이트 내에 명시된 '특허 번호', '인증(KC, FDA 등)', '성분/기술 근거'를 찾아 리스트업하세요. 추측은 절대 금지하며, 내용이 없다면 반드시 "해당 정보 없음"이라고 명시하세요.
-                3. 운영 주체 정보: 사이트 하단(Footer) 등에 기재된 법인명, 사업자 번호 등 공식 운영 주체 정보를 확인하세요.
-
-                ### 케이스 B: [제품 상세 판매 페이지]인 경우
-                [타겟 제품명]: {product_name}
-
-                [조사 지침]
-                1. 타겟 제품 매칭(Product Matching):
-                -현재 페이지가 우리가 찾는 '[{product_name}]'에 대한 정보를 담고 있는지 최우선으로 확인하십시오.
-                -여러 옵션이 섞여 있다면, 반드시 '[{product_name}]'과 직접 관련된 정보만 선별하십시오.
-
-                2. 화면 내 데이터 전수 조사 (스크롤 및 텍스트 추출):
-                -원산지/제조원: 실제 생산지 및 제조사 정보를 명시하십시오.
-                -인증/품질 증거: HACCP, KC인증번호, 당도(Brix), 성분 분석표 등 화면에 '텍스트'나 '이미지 내 글자'로 존재하는 데이터만 추출하십시오.
-                -구매자 리뷰 분석: 실제 구매평 섹션을 분석하여 (1) 주요 긍정 피드백과 (2) 반복되는 불만 사항을 요약하십시오. 리뷰가 없다면 "등록된 리뷰 없음"으로 기재하십시오.
-
-                3.환각 방지 및 데이터 격리 (Strict Rule):
-                -외부 지식 차단: 당신이 기존에 알고 있던 상식이나 외부 정보를 완전히 배제하고, 오직 현재 페이지에 노출된 데이터만 사용하십시오.
-                -추론 금지: "있을 것으로 보임", "우수할 것으로 추정됨"과 같은 추측성 단어 사용 시 오답으로 간주합니다. 정보가 없으면 "페이지 내 근거 확인 불가"라고 단호하게 답변하십시오.
-
-                [출력 JSON 구조 가이드]
-                {{
-                    "analysis_case": "CASE_A 또는 CASE_B",
-                    "detected_subject": "식별된 대상 이름",
-                    "site_details": {{
-                        # CASE_A일 때만 사용 (그 외 null)
-                        "brand_identity": "내용",
-                        "official_claims": {{"patents": [], "certifications": [], "tech_evidence": ""}},
-                        "business_entity": {{"company_name": "", "business_number": "", "address": ""}},
-                        
-                        # CASE_B일 때만 사용 (그 외 null)
-                        "product_verification": {{
-                            "is_target_matched": true/false,
-                            "manufacturer_info": "원산지 및 제조원",
-                            "trust_indicators": ["인증리스트"],
-                            "review_analysis": {{"positive": [], "negative": []}}
-                        }}
-                    }}
-                }}
-                """
-
-                response = self.client.models.generate_content(
-                    model=self.model_id,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        tools=[{"google_search": {}}],
-                        # 안전 설정을 낮춰서 차단 가능성을 줄임
-                        safety_settings=[
-                            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-                            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-                            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-                        ]
-                    )
-                )
-
-                if not response or not response.text:
-                    raise ValueError("AI 응답이 비어있습니다 (Empty Response).")
-
-                # JSON 추출
-                json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
-                if json_match:
-                    result = json.loads(json_match.group())
-                    print(f"✅ [Success] {attempt + 1}번째 시도에서 분석 성공!")
-                    return result
-                else:
-                    raise ValueError("JSON 구조를 찾을 수 없습니다.")
-
-            except Exception as e:
-                last_error = str(e)
-                print(f"⚠️ [Attempt {attempt + 1}] 실패: {last_error}")
-                # 재시도 전 잠깐 대기 (네트워크/서버 부하 고려)
-                if attempt < max_retries - 1:
-                    time.sleep(2) 
-
-        # 모든 재시도가 실패했을 경우
-        return {
-            "error": "최대 재시도 횟수 초과",
-            "last_error": last_error,
-            "target_url": target_url
-        }

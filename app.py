@@ -1,8 +1,8 @@
 from models.dynamodb import db_handler
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from utils.profiler import trace, profiler
-from site_analyzer import LinkTracer, BrandTrustAnalyzer
+from site_analyzer import LinkTracer
 import os
 import json
 from yt_shorts import get_video_id, get_youtube_comments
@@ -96,8 +96,6 @@ def get_video_info():
         # 에러 메시지를 구체적으로 확인하기 위해 e 출력
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# youtube_transcript_api v1.0+: 예외 클래스는 except 블록에서 타입명으로 처리
-
 @app.route('/api/video/check-transcript', methods=['POST'])
 @trace("Route: Check Transcript Exists")
 def check_transcript():
@@ -153,187 +151,103 @@ def check_transcript():
             "message": f"자막 확인 중 오류 발생: {str(e)}"
         }), 500
 
+app.config['JSON_AS_ASCII'] = False
+app.json.ensure_ascii = False
+
+# [중요] 전역 인스턴스 생성
+tracer = LinkTracer()
+
 @app.route('/api/video/analyze', methods=['POST'])
-@trace("Route: Integrated Video & Site Analysis (Fail-safe)")
+@trace("Route: Integrated Video & Site Analysis")
 def analyze_video():
     data = request.get_json()
     video_url = data.get('url')
+    if not video_url:
+        return jsonify({"status": "error", "message": "URL 필요"}), 400
+        
     video_id = get_video_id(video_url)
 
-    async def run_analysis():
-        # 1~3. 자막, 사이트 분석, 댓글을 병렬 수집
-        script_text, trust_report, comments_raw = await asyncio.gather(
-            asyncio.to_thread(get_youtube_transcript2, video_url),
-            asyncio.to_thread(run_site_verification, video_url),
-            asyncio.to_thread(get_youtube_comments, video_url),
-        )
-
-        # 댓글 데이터를 Gemini가 읽기 좋은 문자열로 변환
-        comments_text = (
-            " | ".join(c['text'] for c in comments_raw)
-            if isinstance(comments_raw, list)
-            else str(comments_raw)
-        )
-
-        # 4. Gemini 분석 — 각 데이터를 역할에 맞게 분리 전달
-        from gemini_main import analyze_ad
-        report = await analyze_ad(
-            script_text=script_text,
-            site_details=trust_report.get('step2_deep_verification'),
-            comments_data=comments_text,
-            discovery_data=trust_report.get('step1_video_discovery'),
-        )
-
-        return script_text, trust_report, report, comments_text
-
-    try:
-        script_text, trust_report, report, comments_data = asyncio.run(run_analysis())
-
-        try:
-            analysis_result = json.loads(report) if isinstance(report, str) else report
-        except (json.JSONDecodeError, TypeError):
-            analysis_result = report
-
-        # DB 저장
-        try:
-            db_handler.save_analysis_result({
-                "video_id": video_id,
-                "script_analysis": analysis_result,
-                "trust_report": trust_report,
-                "client_ip": request.remote_addr,
-                "user_agent": request.headers.get('User-Agent', ''),
-            })
-        except Exception:
-            pass
-
-        return jsonify({
+    # 1. DB 캐시 확인
+    cached = db_handler.get_analysis_result(video_id)
+    if cached and "script_analysis" in cached and "trust_report" in cached:
+        print(f"📦 [Cache Hit] 기존 데이터 반환: {video_id}")
+        # 캐시된 데이터를 보낼 때도 한글 보존을 위해 직접 응답 생성
+        final_res = {
             "status": "success",
             "data": {
                 "video_id": video_id,
-                "analysis_result": analysis_result,
-                "site_info": trust_report,
+                "analysis_result": cached["script_analysis"],
+                "site_info": cached["trust_report"],
+                "cached": True
             }
-        })
-
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# 사이트 분석 로직을 별도 함수로 분리 (병렬 처리를 위해)
-def run_site_verification(video_url):
-    from site_analyzer import LinkTracer, BrandTrustAnalyzer
-    tracer = LinkTracer()
-    
-    # Step 1: 여기서 브랜드명, 법인명, 상품명이 추출됩니다.
-    step1_res = tracer.analyze(video_url)
-    final_link = step1_res.get('landing_page_url')
-    
-    step2_res = None
-    if final_link and "http" in final_link:
-        analyzer = BrandTrustAnalyzer(tracer.client)
-        # Step 2: 상세 신뢰도 리포트 생성
-        step2_res = analyzer.generate_trust_report(
-            target_url=final_link,
-            product_name=step1_res.get('product_name'),
-            brand=step1_res.get('brand')
-        )
-        
-    return {
-        "step1_video_discovery": step1_res, # 여기에 브랜드/법인/상품명 포함됨
-        "step2_deep_verification": step2_res
-    }
-    
-# TextFormatter는 v1.0+에서 제거됨 — 수동 텍스트 변환 사용
-def get_youtube_transcript2(video_url, languages=['ko', 'en']):
-    print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
-    from yt_shorts import get_video_id
-    video_id = get_video_id(video_url) # 다양한 URL 지원
-    print(f"[DEBUG] Extracted Video ID: {video_id}")
-    
-    if not video_id: 
-        print("[DEBUG] Failed to extract Video ID.")
-        return None
+        }
+        return Response(json.dumps(final_res, ensure_ascii=False), mimetype='application/json')
 
     try:
-        # [DEBUG] 자막 불러오기 시도
-        print(f"[DEBUG] Attempting to fetch transcript for {video_id} with languages={languages}")
-        
-        # v1.0+: 인스턴스 메서드로 자막 직접 조회
-        ytt_api = YouTubeTranscriptApi()
-        transcript = ytt_api.fetch(video_id, languages=languages)
-        print("[DEBUG] Success fetching transcript.")
+        # 2. 통합 분석 실행
+        hint_data = cached if cached and cached.get('title') else None
+        integrated_report = tracer.analyze(video_url, hint_data=hint_data)
 
-        # 순수 텍스트로 변환하여 Gemini 분석에 최적화 (TextFormatter 대체)
-        print("[DEBUG] Formatting transcript...")
-        formatted_text = "\n".join([snippet.text for snippet in transcript]).strip()
-        print(f"[DEBUG] Formatted text length: {len(formatted_text)}")
-        return formatted_text
-
-    except Exception as e:
-        print(f"❌ [ERROR] get_youtube_transcript2 failed: {e}")
-        import traceback
-        print(traceback.format_exc())
-        return None
-    
-# ==============사이트 분석 로직====================
-@app.route('/api/video/trace-trust', methods=['POST'])
-@trace("Route: Trace Link and Brand Trust")
-def trace_link_and_trust():
-    data = request.get_json()
-    url = data.get("url")
-    if not url:
-        return jsonify({"status": "error", "message": "URL 필요"}), 400
-
-    v_id = get_video_id(url)
-
-    # 1. DB 캐시 확인 (중복 분석 방지 및 메타데이터 획득)
-    cached = db_handler.get_analysis_result(v_id)
-    
-    # 만약 신뢰도 리포트까지 이미 있다면 즉시 반환
-    if cached and "trust_report" in cached:
-        return jsonify({"status": "success", "data": cached["trust_report"], "cached": True})
-
-    try:
-        tracer = LinkTracer() 
-        
-        # Step 1: 영상 분석 및 구매 링크 추적
-        # [수정] DB에 저장된 기본 정보(cached)를 analyze 함수에 전달합니다.
-        step1_res = tracer.analyze(url, hint_data=cached) 
-        final_link = step1_res.get('landing_page_url')
-
-        # Step 2: 구매 사이트 신뢰도 실사
-        step2_res = "유효 링크 없음"
-        if final_link and "http" in final_link:
-            analyzer = BrandTrustAnalyzer(tracer.client)
-            step2_res = analyzer.generate_trust_report(
-                target_url=final_link,
-                product_name=step1_res.get('product_name'),
-                brand=step1_res.get('brand')
-            )
-
-        final_report = {
-            "step1_video_discovery": step1_res,
-            "step2_deep_verification": step2_res
+        # 3. 데이터 매핑
+        script_analysis_data = {
+            "brand": integrated_report.get("brand"),
+            "corporate_name": integrated_report.get("Corporate Name"),
+            "product_name": integrated_report.get("product_name"),
+            "evidence": integrated_report.get("evidence"),
+            "landing_page_url": integrated_report.get("fined_landing_page")
         }
 
-        # 3. 결과 DB 저장
-        # [수정] 분석된 리포트뿐만 아니라, 분석 과정에서 사용된 메타데이터도 함께 업데이트/보존합니다.
-        try:
-            client_ip = request.remote_addr
-            user_agent = request.headers.get('User-Agent', '')
-            db_handler.save_analysis_result({
-                "video_id": v_id,
-                "trust_report": final_report,
-                "client_ip": client_ip,
-                "user_agent": user_agent
-            })
-        except: pass
+        trust_report_data = {
+            "step1_video_discovery": {
+                "brand": integrated_report.get("brand"),
+                "product_name": integrated_report.get("product_name"),
+                "landing_page_url": integrated_report.get("fined_landing_page")
+            },
+            "step2_deep_verification": {
+                "analysis_case": integrated_report.get("analysis_case"),
+                "trust_analysis": integrated_report.get("trust_analysis"),
+                "review": integrated_report.get("review")
+            }
+        }
 
-        return jsonify({"status": "success", "data": final_report})
+        # 4. DB 저장
+        save_payload = {
+            "video_id": video_id,
+            "script_analysis": script_analysis_data,
+            "trust_report": trust_report_data,
+            "client_ip": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', '')
+        }
+        if cached:
+            cached.update(save_payload)
+            db_handler.save_analysis_result(cached)
+        else:
+            db_handler.save_analysis_result(save_payload)
+
+        # 5. [핵심] 최종 응답 생성 (한글 깨짐 방지)
+        final_result = {
+            "status": "success",
+            "data": {
+                "video_id": video_id,
+                "analysis_result": script_analysis_data,
+                "site_info": trust_report_data,
+            }
+        }
+        
+        # ensure_ascii=False로 설정하여 한글을 유니코드 이스케이프 없이 그대로 직렬화
+        json_string = json.dumps(final_result, ensure_ascii=False)
+        
+        # Flask Response를 생성하며 데이터와 타입, 인코딩을 명시함
+        return Response(
+            response=json_string,
+            status=200,
+            mimetype='application/json',
+            content_type='application/json; charset=utf-8'
+        )
 
     except Exception as e:
-        print(f"❌ [Error] {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
 
 ############## 건드리지 말 것 ##############
