@@ -162,6 +162,7 @@ tracer = LinkTracer()
 def analyze_video():
     data = request.get_json()
     video_url = data.get('url')
+    device_id = data.get('device_id')
     
     if not video_url:
         return jsonify({"status": "error", "message": "URL 필요"}), 400
@@ -217,8 +218,7 @@ def analyze_video():
             "script_analysis": analysis_result, # 최종 Gemini 리포트
             "trust_report": trust_report,        # LinkTracer가 찾은 사이트/브랜드 정보
             "script_text": script_text,
-            "client_ip": request.remote_addr,
-            "user_agent": request.headers.get('User-Agent', ''),
+            "device_id": device_id
         }
         
         db_handler.save_analysis_result(save_payload)
