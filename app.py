@@ -171,7 +171,7 @@ def analyze_video():
 
     # 1. DB 캐시 확인
     cached = db_handler.get_analysis_result(video_id)
-    if cached and "script_analysis" in cached:
+    if cached and "analysis_result" in cached:
         return Response(json.dumps({"status": "success", "data": cached}, ensure_ascii=False), mimetype='application/json')
 
     # 2. 통합 분석 실행 함수 (LinkTracer + Gemini Analyze AD)
@@ -215,7 +215,7 @@ def analyze_video():
         # 3. DB 저장 페이로드
         save_payload = {
             "video_id": video_id,
-            "script_analysis": analysis_result, # 최종 Gemini 리포트
+            "analysis_result": analysis_result, # 최종 Gemini 리포트
             "trust_report": trust_report,        # LinkTracer가 찾은 사이트/브랜드 정보
             "script_text": script_text,
             "device_id": device_id
