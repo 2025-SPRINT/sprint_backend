@@ -7,7 +7,6 @@ from googleapiclient.discovery import build
 from google import genai  
 from google.genai import types 
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 
 load_dotenv()
 
@@ -56,9 +55,11 @@ class LinkTracer:
 
     def get_transcript(self, video_id):
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
-            return TextFormatter().format_transcript(transcript).replace('\n', ' ').strip()
-        except: return "자막 없음"
+            ytt_api = YouTubeTranscriptApi()
+            transcript = ytt_api.fetch(video_id, languages=['ko', 'en'])
+            return " ".join(snippet.text for snippet in transcript).strip()
+        except Exception:
+            return "자막 없음"
 
     def analyze_with_gemini_text(self, context_info, image_bytes=None, retry_count=0):
         MAX_RETRIES = 3
