@@ -1,4 +1,5 @@
 from models.dynamodb import db_handler
+from models.feedback_db import feedback_handler
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from utils.profiler import trace, profiler
@@ -223,11 +224,17 @@ def analyze_video():
         
         db_handler.save_analysis_result(save_payload)
 
+        # 2026. 03. 15. 02:59 (피드백 기능 추가)
+        # 현재 프론트에서는 /analyze 요청 시 analysis_id를 받기를 기대함.
+        # 피드백을 받기 위해서는 video_id, device_id 만 있어도 충분하지 않나?
+        # 
+
         # 4. 최종 응답
         final_result = {
             "status": "success",
             "data": {
                 "video_id": video_id,
+                "analysis_id": video_id,
                 "analysis_result": analysis_result,
                 "site_info": trust_report,
             }
@@ -276,6 +283,37 @@ def get_youtube_transcript2(video_url, languages=['ko', 'en']):
         print(traceback.format_exc())
         return None
     
+# ==========================================
+# 피드백 API
+# ==========================================
+@app.route('/api/feedback', methods=['POST'])
+@trace("Route: Save Feedback")
+def save_feedback():
+    data = request.get_json(silent=True) or {}
+    video_id = data.get('video_id')
+    device_id = data.get('device_id')
+    vote = data.get('vote')
+    comment = data.get('comment', '')
+
+    if not video_id or not device_id:
+        return jsonify({"status": "error", "message": "video_id와 device_id가 필요합니다."}), 400
+    if vote not in ('like', 'dislike'):
+        return jsonify({"status": "error", "message": "vote는 'like' 또는 'dislike'이어야 합니다."}), 400
+
+    ok = feedback_handler.save_feedback(video_id, device_id, vote, comment)
+    if not ok:
+        return jsonify({"status": "error", "message": "피드백 저장 실패"}), 500
+    return jsonify({"status": "success"})
+
+
+@app.route('/api/feedback/summary/<video_id>', methods=['GET'])
+@trace("Route: Get Feedback Summary")
+def get_feedback_summary(video_id):
+    device_id = request.args.get('device_id', '')
+    result = feedback_handler.get_feedback_summary(video_id, device_id or None)
+    return jsonify({"status": "success", **result})
+
+
 ############## 건드리지 말 것 ##############
 
 if __name__ == '__main__':
