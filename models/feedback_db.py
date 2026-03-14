@@ -15,7 +15,7 @@ class FeedbackDBHandler:
     SprintFeedback 테이블 핸들러
     - PK: video_id (String)
     - SK: device_id (String)
-    - Attributes: vote, comment, updated_at
+    - Attributes: vote, comment, user_verdict, updated_at
     """
 
     def __init__(self, table_name=None, region_name=None):
@@ -62,25 +62,33 @@ class FeedbackDBHandler:
             else:
                 raise
 
-    def save_feedback(self, video_id: str, device_id: str, vote: str, comment: str = ""):
-        """피드백 upsert (vote: 'like' | 'dislike')"""
+    def save_feedback(self, video_id: str, device_id: str, vote: str = "", comment: str = "", user_verdict: str = ""):
+        """피드백 upsert (vote: 'like' | 'dislike' | '', user_verdict: '위험' | '주의' | '안전' | '')"""
         if not self.table:
             print("❌ [FeedbackDB] Table not initialized.")
             return False
 
-        if vote not in ("like", "dislike"):
+        if vote and vote not in ("like", "dislike"):
             print(f"❌ [FeedbackDB] Invalid vote: {vote}")
             return False
 
+        if user_verdict and user_verdict not in ("위험", "주의", "안전"):
+            print(f"❌ [FeedbackDB] Invalid user_verdict: {user_verdict}")
+            return False
+
         try:
-            self.table.put_item(Item={
+            item = {
                 'video_id': video_id,
                 'device_id': device_id,
-                'vote': vote,
                 'comment': comment or "",
                 'updated_at': int(time.time()),
-            })
-            print(f"✅ [FeedbackDB] Saved feedback: {video_id} / {device_id} → {vote}")
+            }
+            if vote:
+                item['vote'] = vote
+            if user_verdict:
+                item['user_verdict'] = user_verdict
+            self.table.put_item(Item=item)
+            print(f"✅ [FeedbackDB] Saved feedback: {video_id} / {device_id} → {vote} (verdict: {user_verdict or 'N/A'})")
             return True
         except ClientError as e:
             print(f"❌ [FeedbackDB] Save Error: {e}")
@@ -99,7 +107,7 @@ class FeedbackDBHandler:
             }
         """
         if not self.table:
-            return {"likes": 0, "dislikes": 0, "my_vote": None, "my_comment": ""}
+            return {"likes": 0, "dislikes": 0, "my_vote": None, "my_comment": "", "my_verdict": None, "verdict_counts": {}}
 
         try:
             response = self.table.query(
@@ -110,13 +118,22 @@ class FeedbackDBHandler:
             likes = sum(1 for it in items if it.get('vote') == 'like')
             dislikes = sum(1 for it in items if it.get('vote') == 'dislike')
 
+            # 사용자 판정 집계
+            verdict_counts = {}
+            for it in items:
+                v = it.get('user_verdict')
+                if v:
+                    verdict_counts[v] = verdict_counts.get(v, 0) + 1
+
             my_vote = None
             my_comment = ""
+            my_verdict = None
             if device_id:
                 for it in items:
                     if it.get('device_id') == device_id:
                         my_vote = it.get('vote')
                         my_comment = it.get('comment', "")
+                        my_verdict = it.get('user_verdict')
                         break
 
             return {
@@ -124,10 +141,12 @@ class FeedbackDBHandler:
                 "dislikes": dislikes,
                 "my_vote": my_vote,
                 "my_comment": my_comment,
+                "my_verdict": my_verdict,
+                "verdict_counts": verdict_counts,
             }
         except ClientError as e:
             print(f"❌ [FeedbackDB] Query Error: {e}")
-            return {"likes": 0, "dislikes": 0, "my_vote": None, "my_comment": ""}
+            return {"likes": 0, "dislikes": 0, "my_vote": None, "my_comment": "", "my_verdict": None, "verdict_counts": {}}
 
 
 # Singleton

@@ -294,13 +294,16 @@ def save_feedback():
     device_id = data.get('device_id')
     vote = data.get('vote')
     comment = data.get('comment', '')
+    user_verdict = data.get('user_verdict', '')
 
     if not video_id or not device_id:
         return jsonify({"status": "error", "message": "video_id와 device_id가 필요합니다."}), 400
-    if vote not in ('like', 'dislike'):
+    if vote and vote not in ('like', 'dislike'):
         return jsonify({"status": "error", "message": "vote는 'like' 또는 'dislike'이어야 합니다."}), 400
+    if not vote and not user_verdict:
+        return jsonify({"status": "error", "message": "vote 또는 user_verdict 중 하나는 필요합니다."}), 400
 
-    ok = feedback_handler.save_feedback(video_id, device_id, vote, comment)
+    ok = feedback_handler.save_feedback(video_id, device_id, vote, comment, user_verdict)
     if not ok:
         return jsonify({"status": "error", "message": "피드백 저장 실패"}), 500
     return jsonify({"status": "success"})
