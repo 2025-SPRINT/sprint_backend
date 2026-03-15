@@ -1,9 +1,8 @@
 from models.dynamodb import db_handler
-from models.feedback_db import feedback_handler
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from utils.profiler import trace, profiler
-from site_analyzer import LinkTracer
+#from site_analyzer import LinkTracer
 import os
 import json
 from yt_shorts import get_video_id, get_youtube_comments
@@ -156,10 +155,10 @@ app.config['JSON_AS_ASCII'] = False
 app.json.ensure_ascii = False
 
 # [중요] 전역 인스턴스 생성
-tracer = LinkTracer()
+#tracer = LinkTracer()
 
 @app.route('/api/video/analyze', methods=['POST'])
-@trace("Route: Integrated Video & Site Analysis (AD-ASTRA Final)")
+@trace("Route: Integrated Analysis")
 def analyze_video():
     data = request.get_json()
     video_url = data.get('url')
@@ -168,89 +167,69 @@ def analyze_video():
     if not video_url:
         return jsonify({"status": "error", "message": "URL 필요"}), 400
         
-    video_id = tracer.extract_video_id(video_url)
+    video_id = get_video_id_safely(video_url)
 
     # 1. DB 캐시 확인
     cached = db_handler.get_analysis_result(video_id)
     if cached and "analysis_result" in cached:
         return Response(json.dumps({"status": "success", "data": cached}, ensure_ascii=False), mimetype='application/json')
 
-    # 2. 통합 분석 실행 함수 (LinkTracer + Gemini Analyze AD)
-    async def run_analysis():
-        # (1) LinkTracer를 통해 브랜드/사이트/자막/댓글 수집 및 1차 분석
-        # 이 과정에서 tracer.analyze 내부의 수집 로직을 활용합니다.
-        # hint_data가 없으면 tracer가 알아서 API를 호출합니다.
-        trust_report = await asyncio.to_thread(tracer.analyze, video_url)
-        
-        # (2) 필요한 텍스트 데이터 추출 (LinkTracer가 수집한 데이터 활용)
-        # 만약 tracer.analyze 결과에 script나 comments가 포함되도록 tracer 클래스를 수정했다면 그것을 쓰고,
-        # 아니면 여기서 다시 수집합니다.
-        script_text = await asyncio.to_thread(tracer.get_transcript, video_id)
-        comments_text = await asyncio.to_thread(tracer.get_comments, video_id)
-
-        # (3) [핵심] Gemini 2차 심화 분석 실행
-        from gemini_main import analyze_ad
-        report = await analyze_ad(
-        script_text=script_text,
-        site_details=trust_report.get('trust_analysis', '정보 없음'), 
-        comments_data=comments_text,
-        # 딕셔너리 객체를 그대로 넘겨주거나, 필요한 키를 가진 새 딕셔너리를 만듭니다.
-        discovery_data={
-            "brand": trust_report.get('brand', '미확인'),
-            "evidence": trust_report.get('evidence', '근거 없음')
-            }, 
-        )
-
-        return script_text, trust_report, report, comments_text
-
+    # 2. [개선] 데이터 먼저 긁기 (LinkTracer가 중복 호출하지 않게 함)
+    # 유튜브 API 정보(제목, 채널명 등)를 한 번에 가져와서 넘겨줍니다.
+    # tracer.analyze 내부에서 다시 API를 호출하지 않도록 hint_data를 구성합니다.
+    
     try:
-        # 비동기 실행 및 데이터 언패킹 (민석 님이 요청하신 4개 변수 구조)
-        script_text, trust_report, report, comments_data = asyncio.run(run_analysis())
-
-        # JSON 파싱 안전 처리
-        try:
-            analysis_result = json.loads(report) if isinstance(report, str) else report
-        except (json.JSONDecodeError, TypeError):
-            analysis_result = report
-
-        # 3. DB 저장 페이로드
-        save_payload = {
-            "video_id": video_id,
-            "analysis_result": analysis_result, # 최종 Gemini 리포트
-            "trust_report": trust_report,        # LinkTracer가 찾은 사이트/브랜드 정보
-            "script_text": script_text,
-            "device_id": device_id
-        }
+        # 비동기 병렬 분석 실행
+        # analyze_ad 내부에서 LinkTracer, FactCheck, PatentCheck가 동시에 돌아갑니다.
+        from gemini_main import analyze_ad
         
+        # hint_data를 통해 LinkTracer에 필요한 정보를 미리 전달
+        report_json, script_text = asyncio.run(analyze_ad(
+            video_url=video_url,
+            device_id=device_id
+        ))
+
+        analysis_result = json.loads(report_json)
+
+        save_payload = {
+        "video_id": video_id,
+        "analysis_result": analysis_result,
+        "trust_report": {},
+        "script_text": script_text, # 이제 여기서 추출된 자막이 들어갑니다!
+        "device_id": device_id
+        }
         db_handler.save_analysis_result(save_payload)
 
-        # 2026. 03. 15. 02:59 (피드백 기능 추가)
-        # 현재 프론트에서는 /analyze 요청 시 analysis_id를 받기를 기대함.
-        # 피드백을 받기 위해서는 video_id, device_id 만 있어도 충분하지 않나?
-        # 
-
-        # 4. 최종 응답
-        final_result = {
-            "status": "success",
-            "data": {
-                "video_id": video_id,
-                "analysis_id": video_id,
-                "analysis_result": analysis_result,
-                "site_info": trust_report,
-            }
-        }
-        
+        # 3. 최종 응답 생성 및 DB 저장 (기존 로직 유지)
         return Response(
-            response=json.dumps(final_result, ensure_ascii=False),
+            response=json.dumps({"status": "success", "data": analysis_result}, ensure_ascii=False),
             status=200,
             mimetype='application/json',
             content_type='application/json; charset=utf-8'
         )
     
-    except Exception as e:  # 이 블록이 누락되었는지 확인하세요!
+    except Exception as e:
         import traceback
         print(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+import re
+
+def get_video_id_safely(url):
+    """
+    LinkTracer 없이도 유튜브 URL에서 비디오 ID를 추출하는 독립 함수
+    """
+    if not url:
+        return None
+        
+    patterns = [r'shorts/([\w-]+)', r'v=([\w-]+)', r'be/([\w-]+)']
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match: 
+            return match.group(1)
+            
+    # 패턴 매칭 실패 시 마지막 슬래시 뒤를 가져오는 예외 처리
+    return url.split('/')[-1].split('?')[0]
     
 def get_youtube_transcript2(video_url, languages=['ko', 'en']):
     print(f"[DEBUG] get_youtube_transcript2 called with URL: {video_url}")
@@ -283,40 +262,6 @@ def get_youtube_transcript2(video_url, languages=['ko', 'en']):
         print(traceback.format_exc())
         return None
     
-# ==========================================
-# 피드백 API
-# ==========================================
-@app.route('/api/feedback', methods=['POST'])
-@trace("Route: Save Feedback")
-def save_feedback():
-    data = request.get_json(silent=True) or {}
-    video_id = data.get('video_id')
-    device_id = data.get('device_id')
-    vote = data.get('vote')
-    comment = data.get('comment', '')
-    user_verdict = data.get('user_verdict', '')
-
-    if not video_id or not device_id:
-        return jsonify({"status": "error", "message": "video_id와 device_id가 필요합니다."}), 400
-    if vote and vote not in ('like', 'dislike'):
-        return jsonify({"status": "error", "message": "vote는 'like' 또는 'dislike'이어야 합니다."}), 400
-    if not vote and not user_verdict:
-        return jsonify({"status": "error", "message": "vote 또는 user_verdict 중 하나는 필요합니다."}), 400
-
-    ok = feedback_handler.save_feedback(video_id, device_id, vote, comment, user_verdict)
-    if not ok:
-        return jsonify({"status": "error", "message": "피드백 저장 실패"}), 500
-    return jsonify({"status": "success"})
-
-
-@app.route('/api/feedback/summary/<video_id>', methods=['GET'])
-@trace("Route: Get Feedback Summary")
-def get_feedback_summary(video_id):
-    device_id = request.args.get('device_id', '')
-    result = feedback_handler.get_feedback_summary(video_id, device_id or None)
-    return jsonify({"status": "success", **result})
-
-
 ############## 건드리지 말 것 ##############
 
 if __name__ == '__main__':

@@ -150,57 +150,27 @@ PROMPT_STEP_2 = """
 
 PROMPT_FINAL = """
 # Role
-당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트와 **사전에 검증된 두 가지 리포트(일반 팩트체크, 특허 검증체크)**,댓글 내용, 상품 관련 정보들을 바탕으로, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한 JSON 분석 리포트**를 반환하는 것입니다.
+당신은 대한민국 '표시·광고에 관한 법률' 및 '식약처 광고 심의 가이드라인'을 준수하는 공정하고 객관적인 '광고 신뢰성 분석가'입니다. 귀하의 목표는 제공된 광고 스크립트와 **사전에 검증된 두 가지 리포트(일반 팩트체크, 특허 검증체크)**를 바탕으로, 소비자가 올바른 판단을 내릴 수 있도록 사실에 입각한 **간결한 JSON 분석 리포트**를 반환하는 것입니다.
 
 # Principles
 1. **중립성 유지**: 아래 제공될 'Step 1(일반 팩트) / Step 2(특허 팩트)' 내용을 전적으로 신뢰하고 이를 근거로 평가하십시오.
 2. **간결성 (Brevity)**: 프론트엔드에서 표시하기 용이하도록 불필요한 수식어나 반복을 피하십시오.
-3. 점수 산정(최대 100점, 0점 시작, 위반 시 점수 합산) 등을 통해 객관적 등급을 결정하십시오.
+3. 점수 산정(최대 100점 시작, 위반 시 차감 또는 감점 합산) 등을 통해 객관적 등급을 결정하십시오.
 
-# Scoring Criteria (결과 매핑 및 가산)
-1. 주장 및 근거의 실증성 (30점)
--비현실적 이득 제안 (15점): 구체적 근거 없이 "인생 역전", "월 천 보장" 등 감당하기 힘든 혜택을 약속하면 15점.
--사회적 승인 조작 (10점): "85,000명 돌파" 등 출처 불분명한 숫자로 군중심리를 이용하면 10점.
--거짓 할인 및 유인 판매 (5점): 365일 세일 중이거나, 낚시성 혜택으로 클릭을 유도하면 5점.
-
-2. 언어적 기만성 및 절대적 표현 (35점)
--동질성 호소 및 직접 화법 (10점): "저도 평범한 직장인이었습니다" 등 감정적 유대를 강요하면 10점.
--의구심 사전 차단 (10점): "사기라고 생각하시나요?" 등 의문을 제기할 기회를 선제적으로 차단하면 10점.
--비문 및 번역투 (5점): 맞춤법이 엉망이거나 외국어 번역 느낌이 강해 전문성이 결여되면 5점. 자막 추출 과정에서의 오류 수준으로 볼 수 있는 것은 무시.
--감정적 언어사용 (10점): "기회를 버리시겠습니까?" 등 죄책감이나 불안을 자극하면 10점.
-
-3. 정보원의 투명성 및 사회적 증거 (15점)
--가족/지인 사례 인용 (5점): "우리 엄마도 썼다" 같은 주관적 경험을 과학적 사실인 양 포장하면 5점.
--숨겨진 정보 (5점): 환불 규정이나 필수 약관을 찾기 힘들게 꽁꽁 숨겨두었다면 5점.
--잘못된 계층 구조 (5점): '구매하기'는 크게, '취소하기'는 흐릿하거나 작게 만들었다면 5점.
-
-4. 다크 패턴 및 소비자 반응 (20점)
--허위 시간 제한 알림 (5점): 가짜 카운트다운이나 매일 반복되는 "오늘 마감"을 사용하면 5점.
--허위 재고/수요 알림 (5점): "현재 5,000명 접속 중" 등 허위 실시간 알림창을 띄우면 5점.
--댓글 평판 분석 (10점): 상품에 대한 부정적인 댓글 발견 시 10점.
+# Scoring Criteria (결과 매핑 및 감점)
+1. 사회공학적 조작 및 심리 분석 (40점) - 비현실적 이득(15점), 동질성 호소(15점), 의구심 차단(10점)
+2. 압박형 다크패턴 분석 (30점) - 허위 시간 제한(15점), 허위 재고/수요(15점)
+3. 사회적 증거 조작 및 권위 도용 (20점) - 조작된 승인(10점), 과도한 지인 사례(10점)
+4. 언어적 결함 및 정보 은폐 (10점) - 비문(5점), 정보 은폐(5점)
 
 # Output Guidelines (JSON 형태 준수)
-1. `reliability_level`: "안전", "주의", "위험", "정보 부족" 중 하나 선택.(0~35:안전 / 36~60:주의 / 61~100:위험)
-2. `summary`: 광고의 핵심 기만 수법과 그 이유를 결합하여 **한 문장**으로 요약. (최대 50자 권장)
-   - 형식: "[기만수법] 때문이며, 이는 [검증결과]와 대조되어 위험합니다."
-   - 예시: "허위 특허 주장(비문증 치료제 미등록) 및 실명 공포 마케팅으로 인한 위험 등급입니다."
-3. `score_breakdown`: 반드시 아래 4개 영역을 모두 포함하여 리스트로 작성하십시오. 각 영역의 위반 사항(violation)에 광고나 웹사이트의 어느 부분에서 어떤 사항이 확인되었는지 명시하세요.
-- 영역 1: {"domain": "주장 및 근거의 실증성", "score": n, "violations": [...]} (최대 30점)
-    * 위반 항목(간결하게): 비현실적 이득 제안(15), 사회적 승인 조작(10), 거짓 할인/유인 판매(5) 
-- 영역 2: {"domain": "언어적 기만성 및 절대적 표현", "score": n, "violations": [...]} (최대 35점)
-    * 위반 항목(간결하게): 동질성 호소(10), 의구심 사전 차단(10), 비문/번역투(5), 감정적 언어사용(10)
-- 영역 3: {"domain": "정보원의 투명성 및 사회적 증거", "score": n, "violations": [...]} (최대 15점)
-    * 위반 항목(간결하게): 가족/지인 사례 인용(5), 숨겨진 정보(5), 잘못된 계층 구조(5)
-- 영역 4: {"domain": "시각적 유도 및 다크 패턴", "score": n, "violations": [...]} (최대 20점)
-    * 위반 항목(간결하게): 허위 시간 제한(5), 허위 재고/수요 알림(5), 댓글 평판 분석(10)
-4. `issues`: 광고의 문제점을 소비자가 즉각 인지하도록 **[수법: 구체적 사유]** 형식으로 작성. (항목당 20자 내외)
-   - 예시 1: "[허위특허] 치료제 등록 내역 없음"
-   - 예시 2: "[공포조장] 방치 시 실명한다며 위협"
-   - 예시 3: "[허위보장] 전재산 건다는 비과학적 확언"
-5. `patent_check`: **광고에 특허 관련 언급이 있을 경우에만** 작성. 특허 언급이 없으면 반드시 `null`로 설정.
-6. `evidence`: Step 1 및 Step 2에서 확인된 핵심 근거 및 팩트 요약. **Step 1(구글 검색 그라운딩) 결과에 포함된 출처 링크([숫자](URL) 형태)를 찾아내어 `url` 항목에 반드시 원본 URL 문자열로 포함**하십시오.
-7. `consultation`: **1-2문장**으로 핵심 조언만 제공. 장황한 설명 금지.
-8. 'risk_score' : 계산된 최종 의심 성적.
+1. `reliability_level`: "안전", "주의", "위험", "정보 부족" 중 하나 (0~35:안전 / 36~60:주의 / 61~100:위험)
+2. `summary`: 검증 결과를 바탕으로 **한 문장**으로 요약. (최대 50자 권장)
+3. `issues`: 광고의 문제점을 소비자가 즉각 인지하도록 **[수법: 구체적 사유]** 형식으로 작성. (항목당 20자 내외)
+4. `patent_check`: 제공받은 Step 2 검증 자료에 특허 관련 내용이 있을 경우에만 작성. 없으면 반드시 `null` 처리.
+5. `evidence`: Step 1 및 Step 2에서 확인된 핵심 근거 및 팩트 요약. **Step 1(구글 검색 그라운딩) 결과에 포함된 출처 링크([숫자](URL) 형태)를 찾아내어 `url` 항목에 반드시 원본 URL 문자열로 포함**하십시오.
+6. `consultation`: **1-2문장** 핵심 조언.
+7. `risk_score` : 평가된 의심 최종 성적 계산값.
 
 이후 제공되는 문맥을 읽고 지침에 따라 분석해 주세요.
 """
@@ -247,6 +217,9 @@ def add_citations(response):
     metadata = response.candidates[0].grounding_metadata
     if not hasattr(metadata, 'grounding_supports') or not metadata.grounding_supports:
         return text
+    
+    if not metadata or not hasattr(metadata, 'grounding_supports'):
+        return text
 
     supports = metadata.grounding_supports
     chunks = metadata.grounding_chunks
@@ -264,7 +237,7 @@ def add_citations(response):
             citation_string = ", ".join(citation_links)
             text = text[:end_index] + " " + citation_string + text[end_index:]
 
-    return text
+    return response.text
 
 
 def save_response_to_file(token_usage, prompt_text, response_text, folder_path="responses"):
@@ -487,47 +460,106 @@ async def _step3_synthesize(client, script_text, site_details, comments_data,
 # =====================================================
 # Public Entry Point
 # =====================================================
+import re
 
-@trace("Gemini Analysis (Full)")
-async def analyze_ad(script_text, site_details=None, comments_data=None, discovery_data=None):
-    """광고 분석 파이프라인 진입점.
-    
-    Args:
-        script_text: 유튜브 자막 텍스트 (순수 스크립트)
-        site_details: 웹사이트 상세 분석 결과 (step2_deep_verification)
-        comments_data: 댓글 문자열
-        discovery_data: 브랜드/법인/상품 정보 (step1_video_discovery)
-    
-    Returns:
-        str: JSON 형태의 분석 리포트 문자열
+def get_video_id_safely(url):
+    """
+    LinkTracer 없이도 유튜브 URL에서 비디오 ID를 추출하는 독립 함수
+    """
+    if not url:
+        return None
+        
+    patterns = [r'shorts/([\w-]+)', r'v=([\w-]+)', r'be/([\w-]+)']
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match: 
+            return match.group(1)
+            
+    # 패턴 매칭 실패 시 마지막 슬래시 뒤를 가져오는 예외 처리
+    return url.split('/')[-1].split('?')[0]
+
+def get_comments(self, video_id, max_results=50):
+        try:
+            request = self.youtube.commentThreads().list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=max_results,
+                order="relevance"
+            )
+            response = request.execute()
+            comments = [item['snippet']['topLevelComment']['snippet']['textDisplay'] for item in response.get('items', [])]
+            return " | ".join(comments) if comments else "댓글 없음"
+        except Exception as e:
+            print(f"⚠️ [Comment Error] {e}")
+            return "댓글 없음"
+
+@trace("Gemini Analysis (Integrated Parallel)")
+async def analyze_ad(video_url, site_details=None, comments_data=None, discovery_data=None, script_text=None, device_id=None, hint_data=None):
+    """
+    3개 프로세스를 동시에 실행하여 속도를 극대화한 파이프라인
     """
     load_dotenv()
     client = genai.Client(api_key=os.getenv("api_key_grounding"))
-    
     logger = GeminiDebugLogger()
     total_usage = types.GenerateContentResponseUsageMetadata(
-        prompt_token_count=0,
-        candidates_token_count=0,
-        total_token_count=0
+        prompt_token_count=0, candidates_token_count=0, total_token_count=0
     )
 
-    # Step 1 & 2: 자막만 전달하여 팩트체크 / 특허검증 (병렬 실행)
-    step1_result, step2_result = await asyncio.gather(
-        _step1_fact_check(client, script_text, logger, total_usage),
-        _step2_patent_check(client, script_text, logger, total_usage),
-    )
+    video_id = get_video_id_safely(video_url)
 
-    # Step 3: 모든 정보를 통합하여 최종 리포트 생성
+    # [중요] 여기서 자막을 먼저 가져와야 병렬 태스크에 넘겨줄 수 있습니다.
+    if not script_text:
+        print(f"🌐 [Data Fetch] 자막 추출 시도 중: {video_id}")
+        from app import get_youtube_transcript2
+        script_text = await asyncio.to_thread(get_youtube_transcript2, video_url)
+        if not script_text: script_text = "광고 스크립트 없음"
+
+    if not comments_data:
+        youtube_api_key = os.getenv("Youtube_API_Key")
+        comments_data = await asyncio.to_thread(get_comments, youtube_api_key, video_id)
+        comments_data = "댓글 분석 제외 (테스트 중)" # 이렇게 고정
+        
+    print(f"🚀 3-Way 병렬 분석 시작... (자막 길이: {len(script_text)})")
+    # [핵심] 3개 작업을 동시에 실행 (asyncio.gather)
+    # 1. 사이트 분석(LinkTracer) 2. 팩트체크(Google Grounding) 3. 특허체크(KIPRIS)
+    print("🚀 3-Way 병렬 분석 시작...")
+    
+    # tracer.analyze를 비동기 루프에서 돌리기 위해 asyncio.to_thread 사용 (동기 함수인 경우)
+    print("🚀 2번 테스트 시작: LinkTracer 제외 (팩트체크/특허만 실행)")
+
+    tasks = [
+        _step1_fact_check(client, script_text, logger, total_usage), # 2. 구글 팩트체크
+        _step2_patent_check(client, script_text, logger, total_usage)  # 3. KIPRIS 특허체크
+    ]
+
+    # 세 작업이 다 끝날 때까지 동시에 기다림
+    step1_result, step2_result = await asyncio.gather(*tasks)
+
+    trust_report = {
+        "brand": "분석 제외",
+        "Corporate Name": "분석 제외",
+        "product_name": "분석 제외",
+        "trust_analysis": "분석 생략 (테스트 중)",
+        "fined_landing_page": "정보 없음"
+    }
+
+    # Step 3: 위 3개 결과를 하나로 합쳐서 최종 판결 (이건 앞선 결과가 필요하므로 이후에 실행)
     final_text = await _step3_synthesize(
-        client, script_text, site_details, comments_data, discovery_data,
-        step1_result, step2_result, logger, total_usage
+        client, 
+        script_text, 
+        trust_report, # site_details 위치에 들어감
+        comments_data if comments_data else "댓글 없음",
+        discovery_data=trust_report, # 브랜드 정보도 여기서 추출
+        step1_result=step1_result, 
+        step2_result=step2_result, 
+        logger=logger, 
+        total_usage=total_usage
     )
 
-    # 로그 저장
     logger.set_usage(total_usage)
     debug_path = logger.save()
     print(f"\n[Debug] 상세 API 호출 흐름이 저장되었습니다: {debug_path}")
 
     save_response_to_file(total_usage, PROMPT_FINAL, final_text)
 
-    return final_text
+    return final_text, script_text
